@@ -7,7 +7,7 @@
 #define MEDIANAMENTE_SUCIA  5
 #define ALTAMENTE_SUCIA     6 //inactivo.
 #define VACIANDO            7
-#define CONTINUE            8
+#define CONTINUE_STATE      8 //DUDOSO
 
 
 //typedef enum {LIMPIO, ENTRANDO_GATO, LEVEMENTE_SUCIA, MEDIANAMENTE_SUCIA, ALTAMENTE_SUCIA, VACIANDO, LLENANDO, CONTINUE /*recomendado este por Esteban*/} Event;
@@ -23,6 +23,7 @@
 #define HIGH_DIRTINESS      6
 #define BUTTON_1_ACTIVATED  7
 #define BUTTON_2_ACTIVATED  8
+#define CONTINUE            10 //para que quede en los estados pasivos (los de suciedad, limpio o vaciando).
 //
 
 //pines:
@@ -71,11 +72,16 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
   switch(state){
     case INIT:
       state = LIMPIO;
+      //inicializa el SERVO.
     break;
     case LIMPIO:
       switch(event){
         case ENTRANCE_DETECTED:
           state = ENTRANDO_GATO;
+          //no hace mucho más.
+        break;
+        case CONTINUE:
+          //se queda en este estado.
         break;
         default:
         break;
@@ -86,6 +92,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       switch(event){
         case EXIT_DETECTED:
           state = GATO_AFUERA;
+          //no hace mucho más.
         break;
         default:
         break;
@@ -96,14 +103,18 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       switch(event){
         case NO_DIRTINESS:
           state = LIMPIO;
+          //no hace mucho.
         case LOW_DIRTINESS:
           state = LEVEMENTE_SUCIA;
+          //cambia el LED y el DISPLAY.
         break;
         case MID_DIRTINESS:
           state = MEDIANAMENTE_SUCIA;
+          //cambia el LED y el DISPLAY.
         break;
         case HIGH_DIRTINESS:
           state = ALTAMENTE_SUCIA;
+          //cambia el LED, el DISPLAY, mueve el SERVO.
         break;
         default:
         break;
@@ -114,8 +125,13 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       switch(event){
         case ENTRANCE_DETECTED:
           state = ENTRANDO_GATO;
+          //no hace mucho más.
         case BUTTON_1_ACTIVATED:
           state = VACIANDO;
+          //comienza a ignorar los sensores, puede cambiar el DISPLAY.
+        break;
+        case CONTINUE:
+          //se queda en este estado.
         break;
         default:
         break;
@@ -128,6 +144,10 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
           state = ENTRANDO_GATO;
         case BUTTON_1_ACTIVATED:
           state = VACIANDO;
+          //comienza a ignorar los sensores, puede cambiar el DISPLAY.
+        break;
+        case CONTINUE:
+          //se queda en este estado.
         break;
         default:
         break;
@@ -138,6 +158,10 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       switch(event){
         case BUTTON_1_ACTIVATED:
           state = VACIANDO;
+          //comienza a ignorar los sensores, puede cambiar el DISPLAY.
+        break;
+        case CONTINUE:
+          //se queda en este estado.
         break;
         default:
         break;
@@ -148,13 +172,17 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       switch(event){
         case BUTTON_2_ACTIVATED:
           state = LIMPIO;
+          //reinicia o reposiciona el SERVO.
+        break;
+        case CONTINUE:
+          //se queda en este estado.
         break;
         default:
         break;
       }
     break;
 
-    case CONTINUE: //sería como que quede en el mismo estado (capaz no va).
+    case CONTINUE_STATE: //sería como que quede en el mismo estado (capaz no va).
     break;
 
     default:
@@ -164,6 +192,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
 
 int get_event(){
 //iría la lógica para obtener un evento según el estado y las cosas que sucedan (leer sensores, mover actuadores, etc.).
+//PUEDE MANEJARSE CON UN CASE PARA LEER SEGÚN CADA ESTADO, IGUAL QUE state_machine().
 //retorna el evento que corresponde según el estado actual y lo que ocurra en ese contexto.
 }
 
