@@ -65,6 +65,11 @@ const int sensorHumedad = A0;
 int state;
 int event;
 
+
+bool dentro = false; //capaz no está bien, ya que también es un estado, preguntar o revisar si no son estados internos del sensor de presencia..
+
+
+
 typedef struct
 {
     int rojo;
@@ -236,8 +241,10 @@ void get_event()
 bool verify_distance()
 {
   //lógica del lector de distancia. Retorna true si detecta que el gato está adentro y debería retornar true si detecta que el gato salió (no se puede medir contra el máximo)
-  //ya que retornaría true siempre. Hay que usar algún timer o algo para detectar que salió.
-  
+  //ya que retornaría true siempre. Hay que usar algún timer o algo para detectar que salió (un booleano creo que queda perfecto).
+
+  bool dentro = false;
+
   float min = 3; //distancia de la puerta de la caja.
   float timer = 0; //ver cómo manejar esto.
 
@@ -245,13 +252,15 @@ bool verify_distance()
   if(dist < min)
   {
     event = ENTRANCE_DETECTED;
+    dentro = true;
     return true;
   }
 
-  if(dist >= min && timer)
+  if(dist >= min && dentro)
   {
     event = EXIT_DETECTED;
-    return false;
+    dentro = false; //para indicar que salió, nos ahorramos el problema de detectar la distancia maxima constantemente y que eso retorne un evento EXIT_DETECTED. retorna solo si ya estaba dentro.
+    return true;
   }
 
   return false;
@@ -281,7 +290,7 @@ bool verify_button()
   return false;
 }
 
-bool verify_humidity()
+bool verify_humidity() //también tendría que verificar la cantidad de veces que entró y salió (como un contador asumiendo que caga siempre para facilitarnos la vida)
 {
   int MIN_HUMIDITY = 1000;
   int MID_HUMIDITY = 600;
