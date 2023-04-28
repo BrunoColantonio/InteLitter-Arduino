@@ -15,7 +15,7 @@
 //estados propios del pulsador:
 #define PRESSED_ONCE    0
 #define PRESSED_TWICE   1
-#define NOT_PRESSED     2
+#define NOT_PRESSED     2 //capaz no hace falta
 
 //
 
@@ -50,7 +50,7 @@ const int servo1 = 9;
 //const int servo2 = 10; //YA NO HAY SERVO 2
 
 const int pulsadorDisable = 4;
-const int pulsadorLlenar = 13;
+const int pulsadorLlenar = 13; //este no va.
 
 
 /*
@@ -70,7 +70,7 @@ bool dentro = false; //capaz no está bien, ya que también es un estado, pregun
 
 
 
-typedef struct
+typedef struct //esto no sirve
 {
     int rojo;
     int verde;
@@ -235,7 +235,7 @@ void get_event()
 //revisar la prioridad que queremos darle.
   if(verify_distance() == true || verify_button() == true || verify_humidity() == true)
     return;
-  event = CONTINUE;
+  event = CONTINUE; //nunca entraría acá por como funciona verify_humidity(), ver si se puede sacar o lo necesitamos.
 }
 
 bool verify_distance()
@@ -243,12 +243,10 @@ bool verify_distance()
   //lógica del lector de distancia. Retorna true si detecta que el gato está adentro y debería retornar true si detecta que el gato salió (no se puede medir contra el máximo)
   //ya que retornaría true siempre. Hay que usar algún timer o algo para detectar que salió (un booleano creo que queda perfecto).
 
-  bool dentro = false;
-
   float min = 3; //distancia de la puerta de la caja.
-  float timer = 0; //ver cómo manejar esto.
 
-  float dist = 3;
+  float dist = digitalRead(distanciometro) / 63; //ver como era que funcionaba
+
   if(dist < min)
   {
     event = ENTRANCE_DETECTED;
@@ -268,7 +266,7 @@ bool verify_distance()
 
 bool verify_button()
 {
-  get_button_state();
+  get_button_state(); //capaz no hace falta y se puede leer de acá.
   
   switch(button_state)
   {
@@ -320,8 +318,10 @@ bool verify_humidity() //también tendría que verificar la cantidad de veces qu
     event = MID_DIRTINESS;
     return true;
   }
-}
 
+  event = HIGH_DIRTINESS;
+  return true;
+}
 
 void changeLED(int color){
   switch(color){
@@ -336,8 +336,8 @@ void changeLED(int color){
       digitalWrite(ledB, LOW);
     break;
     case ORANGE:
-      digitalWrite(ledG, HIGH);
-      digitalWrite(ledR, 69);
+      digitalWrite(ledG, 69);
+      digitalWrite(ledR, HIGH); //magic number, hay que cambiarlo (al pedo).
       digitalWrite(ledB, LOW);
     break;
     case RED:
@@ -354,180 +354,3 @@ void changeLED(int color){
     break;
   }
 }
-
-
-
-/*EJEMPLO: 
-LiquidCrystal lcd(8,9,10,11,12,13);
-byte colPins[4] = {3, 2, 10, 11};
-byte rowPins[4] = {7, 6, 5, 4};
-Keypad myKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
-typedef enum {INITIAL, WAITING, LOADING, SUCCESS, ERROR, NONE, SECOND_FACTOR} generalStatus;
-generalStatus STATUS = INITIAL;
-
-typedef enum {NO_EVENT,KEY_PRESS, CHANGE_TEMP, ACCEPT, START, OPENED, PROCCESSING, RESET, WARNING} Event;
-Event EVENT = NO_EVENT;
-*/
-
-/* void setup()
-{
-	Serial.begin(9600);
-  	pinMode(ledLoading, OUTPUT);
-  	pinMode(ledSuccess, OUTPUT);
-  	pinMode(ledError, OUTPUT);
-  	pinMode(buzzer, OUTPUT);
-  	lcd.begin(16,2);
-}
-
-void loop()
-{
-  if(ldrValue != previousLdrValue){
-    if (STATUS == SECOND_FACTOR)
-    	EVENT = CHANGE_TEMP;
-    ldrValue= analogRead(pinLDR);
-  }
-  key = myKeypad.getKey();
-  if(key){
-    switch(STATUS){
-     
-      case INITIAL:
-        if (key == keyStart)
-        	EVENT = START;
-        else if (key == keyReset)
-      		EVENT = RESET;
-        else
-        	EVENT = KEY_PRESS;
-    	break;
-    case WAITING:
-      if (key == keyAccept)
-        	EVENT = ACCEPT;
-        else if (key == keyReset)
-      		EVENT = RESET;
-        else
-        	EVENT = KEY_PRESS;
-    	break;
-       default:
-    	if (key == keyReset)
-      		EVENT = RESET;
-    	break;
-    }
-  }
-  executeSystem();
-}
-
-void executeSystem(){
-  switch(STATUS){
-   	case INITIAL:
-        switch(EVENT){
-          case RESET:
-    		resetSystem();
-    		break;
-          case NO_EVENT:
-          	initializeSystem();
-          	break;
-          case START:
-          	verifyStart();
-          	break;
-        }
-    break;
-    case WAITING:
-    	switch(EVENT){
-          case RESET:
-    		resetSystem();
-    		break;
-          case NO_EVENT:
-          	break;
-          case ACCEPT:
-          	acceptPassword();
-          	break;
-          case KEY_PRESS:
-          	writePassword();
-          	break;
-        }
-    break;
-    case LOADING:
-    	switch(EVENT){
-          case RESET:
-    		resetSystem();
-    		break;
-          case PROCCESSING:
-          	loadingProccess();
-          	break;
-        }
-		break;
-    case SECOND_FACTOR:
-    	switch(EVENT){
-          case RESET:
-    		resetSystem();
-    		break;
-          case CHANGE_TEMP:
-          	verifySecondFactorSecurity();
-          	break;
-        }
-    	break;
-    case SUCCESS:
-    	switch(EVENT){
-          case RESET:
-    		resetSystem();
-    		break;
-          case OPENED:
-          	openBox();
-          	break;
-        }
-		break;
-    case ERROR:
-    switch(EVENT){
-          case RESET:
-    		resetSystem();
-    		break;
-          case WARNING:
-          	errorPassword();
-          	break;
-        }
-		break;
-  }  
-}
-
-void errorPassword(){
-  changeStatusLed(ledError,TURN_ON); 
-  prepareToTone();
-  writeLcd("LA CLAVE","ES INCORRECTA");
-}
-
-void resetSystem(){
- lcd.clear();
- STATUS = INITIAL;
- EVENT = NO_EVENT;
-}
-
-void openBox(){
-  changeStatusLed(ledSuccess,TURN_ON); 
-  writeLcd("LA CLAVE","ES CORRECTA");
-    
-}
-
-void verifySecondFactorSecurity(){
-  writeLcd("ESPERANDO","HUELLA DIGITAL");
-  if(ldrValue > fingerPrintTem){
-    lcd.clear();
-    STATUS=SUCCESS;
-    EVENT=OPENED;
-  } 
-}
-
-void loadingProccess(){
-  changeStatusLed(ledLoading,TURN_ON); 
-  writeLcd("PROCESANDO","");
-  currentMillis = millis();
-  timeToProccess();       
-}
-
-void writePassword(){
-  lcd.clear();
-  password = password + key;
-  passwordToShow = passwordToShow + '-';
-  writeLcd("CLAVE:", passwordToShow);
-  EVENT = NO_EVENT;
-}
--
- */
