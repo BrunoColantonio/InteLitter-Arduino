@@ -7,7 +7,7 @@
 #define MEDIANAMENTE_SUCIA  5
 #define ALTAMENTE_SUCIA     6 //inactivo.
 #define VACIANDO            7
-#define CONTINUE_STATE      8 //DUDOSO
+#define CONTINUE_STATE      8 //DUDOSO, puede salir
 
 
 //typedef enum {LIMPIO, ENTRANDO_GATO, LEVEMENTE_SUCIA, MEDIANAMENTE_SUCIA, ALTAMENTE_SUCIA, VACIANDO, LLENANDO, CONTINUE /*recomendado este por Esteban*/} Event;
@@ -40,24 +40,21 @@
 //
 
 //pines:
-const int sigPIR = 12;
+const int distance_sensor = 12;
+const int servo = 9;
 
 const int ledG = 5;
 const int ledB = 6;
 const int ledR = 7;
+const int button = 4;
 
-const int servo1 = 9;
 //const int servo2 = 10; //YA NO HAY SERVO 2
 
-const int pulsadorDisable = 4;
-const int pulsadorLlenar = 13; //este no va.
+const int humidity_sensor = A0;
 
+const int displaySDA = A4;
+const int displaySCL = A5;
 
-/*
-acá irían los pines del display:
-*/
-
-const int sensorHumedad = A0;
 //
 
 
@@ -105,6 +102,10 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
           state = ENTRANDO_GATO;
           //no hace mucho más.
         break;
+        case BUTTON_1_ACTIVATED:
+          state = VACIANDO;
+          //comienza a ignorar los sensores, puede cambiar el DISPLAY, trabar la puerta.
+        break;
         case CONTINUE:
           //se queda en este estado.
         break;
@@ -129,7 +130,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       switch(event)
       {
         case NO_DIRTINESS:
-          state = LIMPIO;
+          state = LIMPIO; //capaz que no va, CONSIDERAR.
           //no hace mucho.
         case LOW_DIRTINESS:
           state = LEVEMENTE_SUCIA;
@@ -159,7 +160,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
           //no hace mucho más.
         case BUTTON_1_ACTIVATED:
           state = VACIANDO;
-          //comienza a ignorar los sensores, puede cambiar el DISPLAY.
+          //comienza a ignorar los sensores, puede cambiar el DISPLAY, mueve el SERVO.
         break;
         case CONTINUE: //podría un evento ser en vez de CONTINUE ser LOW_DIRTINESS y que se quede en este estado.
           //se queda en este estado.
@@ -176,7 +177,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
           state = ENTRANDO_GATO;
         case BUTTON_1_ACTIVATED:
           state = VACIANDO;
-          //comienza a ignorar los sensores, puede cambiar el DISPLAY.
+          //comienza a ignorar los sensores, puede cambiar el DISPLAY, mueve el SERVO.
         break;
         case CONTINUE: //podría un evento ser en vez de CONTINUE ser MID_DIRTINESS y que se quede en este estado.
           //se queda en este estado.
@@ -247,7 +248,7 @@ bool verify_distance()
 
   float dist = digitalRead(distanciometro) / 63; //ver como era que funcionaba
 
-  if(dist < min)
+  if(dist < min) //&& dentro tambien?
   {
     event = ENTRANCE_DETECTED;
     dentro = true;
@@ -264,7 +265,7 @@ bool verify_distance()
   return false;
 }
 
-bool verify_button()
+bool verify_button() //podria inicializarse el boton en PRESSED_TWICE.
 {
   get_button_state(); //capaz no hace falta y se puede leer de acá.
   
