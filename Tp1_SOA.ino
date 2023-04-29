@@ -175,6 +175,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       servo_init();
       //DISPLAY ANIMACION DE INICIO
       lcd.clear();
+      lcd.setCursor(0,0);
       lcd.print("INICIANDO...");
       changeLED(GREEN);
       servo_init();
@@ -204,6 +205,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
           lcd.print("Sensors: OFF");
           changeLED(BLUE);
           state = VACIANDO;
+          Servomotor.write(SERVO_CLOSE);
           //comienza a ignorar los sensores, puede cambiar el DISPLAY, trabar la puerta.
         break;
         case CONTINUE:
@@ -297,6 +299,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
           lcd.print("NO  MOLESTAR");
           changeLED(BLUE);
           state = VACIANDO;
+          Servomotor.write(SERVO_CLOSE);
           //comienza a ignorar los sensores, puede cambiar el DISPLAY, mueve el SERVO.
         break;
         case CONTINUE: //podría un evento ser en vez de CONTINUE ser LOW_DIRTINESS y que se quede en este estado.
@@ -328,6 +331,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
           lcd.print("Sensors: OFF");
           changeLED(BLUE);
           state = VACIANDO;
+          Servomotor.write(SERVO_CLOSE);
           //comienza a ignorar los sensores, puede cambiar el DISPLAY, mueve el SERVO.
         break;
         case CONTINUE: //podría un evento ser en vez de CONTINUE ser MID_DIRTINESS y que se quede en este estado.
@@ -350,7 +354,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
           lcd.print("Sensors: OFF");
           changeLED(BLUE);
           state = VACIANDO;
-          //comienza a ignorar los sensores, puede cambiar el DISPLAY.
+          Servomotor.write(SERVO_CLOSE);
         break;
         case CONTINUE: //podría un evento ser en vez de CONTINUE ser HIGH_DIRTINESS y que se quede en este estado.
           //se queda en este estado.
