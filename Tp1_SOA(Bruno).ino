@@ -422,7 +422,7 @@ bool verify_humidity()
   // si el evento es que salio el gato, comparo las humedades y actualizo el valor
   // sino por cada loop me actualizaría el valor de la suciedad (si no cambia la humedad asumiria que cago)
   // y estaria tomando como que el gato cagó cuando ni siquiera entró
-  if(event = EXIT_DETECTED)
+  if(event == EXIT_DETECTED)
   {
     if(moisture > prev_moisture)
     {
@@ -434,8 +434,10 @@ bool verify_humidity()
     }
     // si no cambió la humedad y el gato entró y salió, asumo que cagó
     else
+    {
+      Serial.println("Cague");
       dirtiness_level += POOP;
-
+    }
     
     // comparo los valores de suciedad para determinar en que estado está
     if(dirtiness_level < LOW_DIRTINESS_MIN_VAL)
