@@ -129,6 +129,11 @@ void setup()
   state = INIT;
   distance_state = DISTANCE_OUTSIDE;
   pinMode(pin_button, INPUT);
+
+  pinMode(ledR, OUTPUT);
+  pinMode(ledG, OUTPUT);
+  pinMode(ledB, OUTPUT);
+  
   Serial.begin(9600);
 }
 
@@ -167,6 +172,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
           //no hace mucho más.
         break;
         case BUTTON_1_ACTIVATED:
+          changeLED(BLUE);
           state = VACIANDO;
           //comienza a ignorar los sensores, puede cambiar el DISPLAY, trabar la puerta.
         break;
@@ -227,6 +233,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
           //no hace mucho más.
         break;
         case BUTTON_1_ACTIVATED:
+          changeLED(BLUE);
           state = VACIANDO;
           //comienza a ignorar los sensores, puede cambiar el DISPLAY, mueve el SERVO.
         break;
@@ -245,6 +252,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
           state = ENTRANDO_GATO;
         break;
         case BUTTON_1_ACTIVATED:
+          changeLED(BLUE);
           state = VACIANDO;
           //comienza a ignorar los sensores, puede cambiar el DISPLAY, mueve el SERVO.
         break;
@@ -260,6 +268,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       switch(event)
       {
         case BUTTON_1_ACTIVATED:
+          changeLED(BLUE);
           state = VACIANDO;
           //comienza a ignorar los sensores, puede cambiar el DISPLAY.
         break;
@@ -461,29 +470,29 @@ void changeLED(int color)
 {
   switch(color){
     case GREEN:
-      digitalWrite(ledG, HIGH);
-      digitalWrite(ledR, LOW);
-      digitalWrite(ledB, LOW);
+      analogWrite(ledG, 255);
+      analogWrite(ledR, 0);
+      analogWrite(ledB, 0);
     break;
     case YELLOW:
-      digitalWrite(ledG, HIGH);
-      digitalWrite(ledR, HIGH);
-      digitalWrite(ledB, LOW);
+      analogWrite(ledG, 255);
+      analogWrite(ledR, 255);
+      analogWrite(ledB, 0);
     break;
     case ORANGE:
-      digitalWrite(ledG, 69); //magic number, hay que cambiarlo (al pedo).
-      digitalWrite(ledR, HIGH); 
-      digitalWrite(ledB, LOW);
+      analogWrite(ledG, 100); //magic number, hay que cambiarlo (al pedo).
+      analogWrite(ledR, 255); 
+      analogWrite(ledB, 0);
     break;
     case RED:
-      digitalWrite(ledG, LOW);
-      digitalWrite(ledR, HIGH);
-      digitalWrite(ledB, LOW);
+      analogWrite(ledG, 0);
+      analogWrite(ledR, 255);
+      analogWrite(ledB, 0);
     break;
     case BLUE:
-      digitalWrite(ledG, LOW);
-      digitalWrite(ledR, LOW);
-      digitalWrite(ledB, HIGH);
+      analogWrite(ledG, 0);
+      analogWrite(ledR, 0);
+      analogWrite(ledB, 255);
     break;
     default:
     break;
