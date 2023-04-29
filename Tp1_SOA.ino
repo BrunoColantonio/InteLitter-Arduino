@@ -1,4 +1,10 @@
 #include <Servo.h>
+//DISPLAY
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+//DISPLAY
+LiquidCrystal_I2C lcd(32,16,2);
+
 
 //estados:
 #define INIT                0
@@ -60,12 +66,15 @@ Servo Servomotor;
 void servo_init();
 
 //---------------------------
-// HUMIDITY HEADERS
+// MOISTURE HEADERS
 //---------------------------
-#define HUMIDITY_MIN 100
-#define HUMIDITY_MID 400
-#define HUMIDITY_MAX 700
-#define HUMEDITY_CLEAN 0
+#define MAX_MOISTURE_VALUE      539.0
+#define POOP                    2       // valores de ejemplo para que la prueba en tinker sea facil
+#define LOW_DIRTINESS_MIN_VAL   1
+#define MID_DIRTINESS_MIN_VAL   4
+#define HIGH_DIRTINESS_MIN_VAL  6
+float prev_moisture = 0.0; // guarda lectura de humedad previa
+float dirtiness_level = 0; // detecta nivel de suciedad
 
 //---------------------------
 // DISTANCE SENSOR HEADERS
@@ -90,7 +99,7 @@ const int ledR = 7;
 
 //const int servo2 = 10; //YA NO HAY SERVO 2
 
-const int humidity_sensor = A0;
+const int moisture_sensor = A0;
 
 const int displaySDA = A4;
 const int displaySCL = A5;
@@ -103,7 +112,7 @@ int state;
 int event;
 
 
-bool dentro = false; //capaz no está bien, ya que también es un estado, preguntar o revisar si no son estados internos del sensor de presencia..
+bool exited = false; //capaz no está bien, ya que también es un estado, preguntar o revisar si no son estados internos del sensor de presencia..
 int distance_state;
 
 int dist;
@@ -126,6 +135,11 @@ void setup()
   state = INIT;
   distance_state = DISTANCE_OUTSIDE;
   pinMode(pin_button, INPUT);
+
+  pinMode(ledR, OUTPUT);
+  pinMode(ledG, OUTPUT);
+  pinMode(ledB, OUTPUT);
+  
   Serial.begin(9600);
 }
 
@@ -136,7 +150,7 @@ void loop()
   state_machine();
 
   show_state_and_event();
-  delay(500);
+  delay(1000);
 }
 
 void show_state_and_event()
@@ -155,15 +169,36 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       state = LIMPIO;
       changeLED(GREEN);
       servo_init();
+      //DISPLAY ANIMACION DE INICIO
+      lcd.clear();
+      lcd.print("INICIANDO...");
+      changeLED(GREEN);
+      servo_init();
+      //DISPLAY LIMPIO
+      lcd.clear();
+      lcd.setCursor(1,0);//centro el texto
+      lcd.print("ESTADO: LIMPIO");
     break;
     case LIMPIO:
       switch(event)
       {
         case ENTRANCE_DETECTED:
           state = ENTRANDO_GATO;
-          //no hace mucho más.
+           //DISPLAY GATO DENTRO
+          lcd.clear();
+          lcd.setCursor(2,0);//centro el texto
+          lcd.print("GATO  DENTRO");
+          lcd.setCursor(2,1);//centro el texto
+          lcd.print("NO  MOLESTAR");
         break;
         case BUTTON_1_ACTIVATED:
+        //DISPLAY VACIANDO
+          lcd.clear();
+          lcd.setCursor(4,0);//centro el texto
+          lcd.print("VACIANDO");
+          lcd.setCursor(2,1);//centro el texto
+          lcd.print("Sensors: OFF");
+          changeLED(BLUE);
           state = VACIANDO;
           //comienza a ignorar los sensores, puede cambiar el DISPLAY, trabar la puerta.
         break;
@@ -179,6 +214,12 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       switch(event)
       {
         case EXIT_DETECTED:
+        //DISPLAY CALCULANDO
+          lcd.setCursor(0,0);//centro el texto
+          lcd.print("CALCULANDO .....");
+          lcd.setCursor(0,1);//centro el texto
+          lcd.print("Espere Por Favor");
+          exited = true;            
           state = GATO_AFUERA;
           //no hace mucho más. Podría incrementarse un acumulador con la cantidad de veces que ingresó (sería más facil calcular la suciedad si asumimos que siempre caga).
         break;
@@ -191,20 +232,36 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       switch(event)
       {
         case NO_DIRTINESS:
+        //DISPLAY LIMPIO
+          lcd.clear();
+          lcd.setCursor(1,0);//centro el texto
+          lcd.print("ESTADO: LIMPIO");
           state = LIMPIO; //capaz que no va, CONSIDERAR.
           //no hace mucho.
         break;
         case LOW_DIRTINESS:
+        //DISPLAY LEVE
+          lcd.clear();
+          lcd.setCursor(2,0);//centro el texto
+          lcd.print("ESTADO: LEVE");
           state = LEVEMENTE_SUCIA;
           changeLED(YELLOW);
           //cambia el LED y el DISPLAY.
         break;
         case MID_DIRTINESS:
+        //DISPLAY MEDIO
+          lcd.clear();
+          lcd.setCursor(1,0);//centro el texto
+          lcd.print("ESTADO: MEDIO");
           state = MEDIANAMENTE_SUCIA;
           changeLED(ORANGE);
           //cambia el LED y el DISPLAY.
         break;
         case HIGH_DIRTINESS:
+        //DISPLAY CRITICO
+          lcd.clear();
+          lcd.setCursor(0,0);//centro el texto
+          lcd.print("ESTADO:  CRITICO");
           state = ALTAMENTE_SUCIA;
           changeLED(RED);
           Servomotor.write(SERVO_CLOSE);
@@ -218,10 +275,23 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       switch(event)
       {
         case ENTRANCE_DETECTED:
+        //DISPLAY GATO DENTRO
+          lcd.clear();
+          lcd.setCursor(2,0);//centro el texto
+          lcd.print("GATO  DENTRO");
+          lcd.setCursor(2,1);//centro el texto
+          lcd.print("NO  MOLESTAR");
           state = ENTRANDO_GATO;
           //no hace mucho más.
         break;
         case BUTTON_1_ACTIVATED:
+        //DISPLAY GATO DENTRO
+          lcd.clear();
+          lcd.setCursor(2,0);//centro el texto
+          lcd.print("GATO  DENTRO");
+          lcd.setCursor(2,1);//centro el texto
+          lcd.print("NO  MOLESTAR");
+          changeLED(BLUE);
           state = VACIANDO;
           //comienza a ignorar los sensores, puede cambiar el DISPLAY, mueve el SERVO.
         break;
@@ -237,9 +307,22 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       switch(event)
       {
         case ENTRANCE_DETECTED:
+        //DISPLAY GATO DENTRO
+          lcd.clear();
+          lcd.setCursor(2,0);//centro el texto
+          lcd.print("GATO  DENTRO");
+          lcd.setCursor(2,1);//centro el texto
+          lcd.print("NO  MOLESTAR");
           state = ENTRANDO_GATO;
         break;
         case BUTTON_1_ACTIVATED:
+        //DISPLAY VACIANDO
+          lcd.clear();
+          lcd.setCursor(4,0);//centro el texto
+          lcd.print("VACIANDO");
+          lcd.setCursor(2,1);//centro el texto
+          lcd.print("Sensors: OFF");
+          changeLED(BLUE);
           state = VACIANDO;
           //comienza a ignorar los sensores, puede cambiar el DISPLAY, mueve el SERVO.
         break;
@@ -255,6 +338,13 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       switch(event)
       {
         case BUTTON_1_ACTIVATED:
+        //DISPLAY VACIANDO
+          lcd.clear();
+          lcd.setCursor(4,0);//centro el texto
+          lcd.print("VACIANDO");
+          lcd.setCursor(2,1);//centro el texto
+          lcd.print("Sensors: OFF");
+          changeLED(BLUE);
           state = VACIANDO;
           //comienza a ignorar los sensores, puede cambiar el DISPLAY.
         break;
@@ -270,7 +360,13 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       switch(event)
       {
         case BUTTON_2_ACTIVATED:
+        //DISPLAY LIMPIO
+          lcd.clear();
+          lcd.setCursor(1,0);//centro el texto
+          lcd.print("ESTADO: LIMPIO");
           state = LIMPIO;
+          prev_moisture = 0;
+          dirtiness_level = 0;
           changeLED(GREEN);
           Servomotor.write(SERVO_OPEN);
         break;
@@ -298,7 +394,7 @@ void get_event()
 //retorna el evento que corresponde según el estado actual y lo que ocurra en ese contexto.
 
 //revisar la prioridad que queremos darle.
-  if(verify_distance() == true || verify_button() == true || verify_humidity() == true)
+  if(verify_distance() == true || verify_button() == true || verify_moisture() == true)
     return;
   event = CONTINUE; //nunca entraría acá por como funciona verify_humidity(), ver si se puede sacar o lo necesitamos.
 }
@@ -341,41 +437,36 @@ bool verify_distance()
 //SIN MAQUINA DE ESTADOS:
 /* 
   time_to_object = read_distance_sensor(distance_sensor, distance_sensor);
-
   dist = time_to_object * speed_of_sound;
-
-
   if(dist < min_distance) //&& dentro tambien?
   {
     event = ENTRANCE_DETECTED;
     dentro = true;
     return true;
   }
-
   if(dist >= min_distance && dentro) //esto no se puede?
   {
     event = EXIT_DETECTED;
     dentro = false; //para indicar que salió, nos ahorramos el problema de detectar la distancia maxima constantemente y que eso retorne un evento EXIT_DETECTED.
     return true; //retorna solo si ya estaba dentro.
   }
-
   return false;
 */
 }
 
 bool verify_button()  // podria inicializarse el boton en PRESSED_TWICE.
 {
-//  buttonState = digitalRead(pin_button); // Lee en LOW (no lee en low).
-  /*
+  buttonState = digitalRead(pin_button); // Lee en LOW (no lee en low).
+  
   Serial.println("Lectura del boton:");
   Serial.println(buttonState);
   Serial.println("------------------");
   Serial.println("prevButtonState:");
   Serial.println(prevButtonState);
   Serial.println("------------------");
-  */
-//  if (buttonState != prevButtonState) 
-  //{
+  
+  if (buttonState != prevButtonState) 
+  {
     if (buttonState == HIGH)
     {
       switch (buttonCurrentState) 
@@ -402,66 +493,86 @@ bool verify_button()  // podria inicializarse el boton en PRESSED_TWICE.
         break;
       }
     }
-  //}
+  }
 
   prevButtonState = buttonState;
   return false;
 }
 
-bool verify_humidity() //también tendría que verificar la cantidad de veces que entró y salió (como un contador asumiendo que caga siempre para facilitarnos la vida)
-{
+bool verify_moisture()
+{ 
+  // leo la humedad
+  float moisture = analogRead(moisture_sensor);
+  // nivel de humedad de 0 a 10 puntos
+  float moisture_val_out_of_ten;
 
-  float humedad = analogRead(humidity_sensor);
-
-  if(humedad >= HUMIDITY_MIN && humedad < HUMIDITY_MID)
+  // si el evento es que salio el gato, comparo las humedades y actualizo el valor
+  // sino por cada loop me actualizaría el valor de la suciedad (si no cambia la humedad asumiria que cago)
+  // y estaria tomando como que el gato cagó cuando ni siquiera entró
+  //if(event == EXIT_DETECTED)
+  if(exited == true)
   {
-    event = LOW_DIRTINESS;
+    if(moisture > prev_moisture)
+    {
+      // calculo el porcentaje y lo divido por 10 para tener un puntaje y que sea mas facil pasarlo a "suciedad"
+      moisture_val_out_of_ten = (((moisture/MAX_MOISTURE_VALUE)*100)/10.0);
+      dirtiness_level += moisture_val_out_of_ten;
+      // como se modifico la humedad, actualizo el valor previo
+      prev_moisture = moisture;
+
+    }
+    // si no cambió la humedad y el gato entró y salió, asumo que cagó
+    else
+    {
+      Serial.println("Cague");
+      dirtiness_level += POOP;
+    }
+    
+    // comparo los valores de suciedad para determinar en que estado está
+    if(dirtiness_level < LOW_DIRTINESS_MIN_VAL)
+          event = NO_DIRTINESS;
+    else if (dirtiness_level < MID_DIRTINESS_MIN_VAL)
+          event = LOW_DIRTINESS;
+    else if (dirtiness_level < HIGH_DIRTINESS_MIN_VAL)
+          event = MID_DIRTINESS;
+    else
+          event = HIGH_DIRTINESS;
+
+    exited = false;
     return true;
   }
+// si hago la cuenta solo cuando sale el gato, podria retornar false y "no haber leido nada".
+//¿Que conviene? Evento "continue"? O que siempre lea por mas que no modifique ningun evento?
 
-  if(humedad >= HUMIDITY_MID && humedad < HUMIDITY_MAX)
-  {
-    event = MID_DIRTINESS;
-    return true;
-  }
-
-  if (humedad >= HUMIDITY_MAX)
-  {
-    event = HIGH_DIRTINESS;
-    return true;
-  }
-
-  event = NO_DIRTINESS;
-  return true;
+  return false;
 }
-
 void changeLED(int color)
 {
   switch(color){
     case GREEN:
-      digitalWrite(ledG, HIGH);
-      digitalWrite(ledR, LOW);
-      digitalWrite(ledB, LOW);
+      analogWrite(ledG, 255);
+      analogWrite(ledR, 0);
+      analogWrite(ledB, 0);
     break;
     case YELLOW:
-      digitalWrite(ledG, HIGH);
-      digitalWrite(ledR, HIGH);
-      digitalWrite(ledB, LOW);
+      analogWrite(ledG, 255);
+      analogWrite(ledR, 255);
+      analogWrite(ledB, 0);
     break;
     case ORANGE:
-      digitalWrite(ledG, 69); //magic number, hay que cambiarlo (al pedo).
-      digitalWrite(ledR, HIGH); 
-      digitalWrite(ledB, LOW);
+      analogWrite(ledG, 100); //magic number, hay que cambiarlo (al pedo).
+      analogWrite(ledR, 255); 
+      analogWrite(ledB, 0);
     break;
     case RED:
-      digitalWrite(ledG, LOW);
-      digitalWrite(ledR, HIGH);
-      digitalWrite(ledB, LOW);
+      analogWrite(ledG, 0);
+      analogWrite(ledR, 255);
+      analogWrite(ledB, 0);
     break;
     case BLUE:
-      digitalWrite(ledG, LOW);
-      digitalWrite(ledR, LOW);
-      digitalWrite(ledB, HIGH);
+      analogWrite(ledG, 0);
+      analogWrite(ledR, 0);
+      analogWrite(ledB, 255);
     break;
     default:
     break;
