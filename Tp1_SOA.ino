@@ -1,3 +1,5 @@
+#include <Servo.h>
+
 //estados:
 #define INIT                0
 #define LIMPIO              1
@@ -48,14 +50,43 @@ String states[] = {"INIT", "LIMPIO", "ENTRANDO_GATO", "GATO_AFUERA", "LEVEMENTE_
 String events[] = {"ENTRANCE_DETECTED", "EXIT_DETECTED", "NO_DIRTINESS", "LOW_DIRTINESS",
                     "MID_DIRTINESS", "HIGH_DIRTINESS", "BUTTON_1_ACTIVATED", "BUTTON_2_ACTIVATED", "CONTINUE"};
 
+//---------------------------
+// SERVO HEADERS
+//---------------------------
+#define SERVO_PIN 9
+#define SERVO_OPEN 0
+#define SERVO_CLOSE 180
+Servo Servomotor;
+void servo_init();
+
+//---------------------------
+// HUMIDITY HEADERS
+//---------------------------
+#define HUMIDITY_MIN 100
+#define HUMIDITY_MID 400
+#define HUMIDITY_MAX 700
+#define HUMEDITY_CLEAN 0
+
+//---------------------------
+// DISTANCE SENSOR HEADERS
+//---------------------------
+#define DISTANCE_SENSOR 12
+
+//---------------------------
+// BUTTON HEADERS
+//---------------------------
+
+int buttonState;
+int prevButtonState = LOW;
+int buttonCurrentState = NOT_PRESSED;
+
 //pines:
 const int distance_sensor = 12;
 const int servo = 9;
-
+const int pin_button = 4;
 const int ledG = 5;
 const int ledB = 6;
 const int ledR = 7;
-const int button = 4;
 
 //const int servo2 = 10; //YA NO HAY SERVO 2
 
@@ -77,7 +108,7 @@ int distance_state;
 
 int dist;
 long time_to_object;
-const int min_distance = 30; //sería la distancia a la que estaría la puerta desde el sensor de distancia.
+const int min_distance = 50; //sería la distancia a la que estaría la puerta desde el sensor de distancia.
 const float speed_of_sound = 0.01723; //0,03446 / 2, por la fórmula distancia = velocidad * tiempo / 2, donde velocidad = 340m/seg = 0,034cm/seg
 
 typedef struct //esto no sirve
@@ -88,10 +119,13 @@ typedef struct //esto no sirve
 }ledRGB;
 //
 
+
+
 void setup()
 {
   state = INIT;
   distance_state = DISTANCE_OUTSIDE;
+  pinMode(pin_button, INPUT);
   Serial.begin(9600);
 }
 
@@ -120,7 +154,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
     case INIT:
       state = LIMPIO;
       changeLED(GREEN);
-      //inicializa el SERVO.
+      servo_init();
     break;
     case LIMPIO:
       switch(event)
@@ -159,6 +193,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
         case NO_DIRTINESS:
           state = LIMPIO; //capaz que no va, CONSIDERAR.
           //no hace mucho.
+        break;
         case LOW_DIRTINESS:
           state = LEVEMENTE_SUCIA;
           changeLED(YELLOW);
@@ -172,7 +207,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
         case HIGH_DIRTINESS:
           state = ALTAMENTE_SUCIA;
           changeLED(RED);
-          //cambia el LED, el DISPLAY, mueve el SERVO.
+          Servomotor.write(SERVO_CLOSE);
         break;
         default:
         break;
@@ -185,6 +220,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
         case ENTRANCE_DETECTED:
           state = ENTRANDO_GATO;
           //no hace mucho más.
+        break;
         case BUTTON_1_ACTIVATED:
           state = VACIANDO;
           //comienza a ignorar los sensores, puede cambiar el DISPLAY, mueve el SERVO.
@@ -202,6 +238,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       {
         case ENTRANCE_DETECTED:
           state = ENTRANDO_GATO;
+        break;
         case BUTTON_1_ACTIVATED:
           state = VACIANDO;
           //comienza a ignorar los sensores, puede cambiar el DISPLAY, mueve el SERVO.
@@ -235,7 +272,7 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
         case BUTTON_2_ACTIVATED:
           state = LIMPIO;
           changeLED(GREEN);
-          //reinicia o reposiciona el SERVO.
+          Servomotor.write(SERVO_OPEN);
         break;
         case CONTINUE:
           //se queda en este estado.
@@ -326,64 +363,75 @@ bool verify_distance()
 */
 }
 
-bool verify_button() //podria inicializarse el boton en PRESSED_TWICE.
+bool verify_button()  // podria inicializarse el boton en PRESSED_TWICE.
 {
-//  get_button_state(); //capaz no hace falta y se puede leer de acá.
-  
+//  buttonState = digitalRead(pin_button); // Lee en LOW (no lee en low).
   /*
-  switch(button_state)
-  {
-    case PRESSED_ONCE:
-      event = BUTTON_1_ACTIVATED;
-      return true;
-    break;
-
-    case PRESSED_TWICE:
-      event = BUTTON_2_ACTIVATED;
-      return true;
-    break;
-
-    default:
-      return false; //NOT_PRESSED. CAPAZ NO VA, PODRÍA SER LO QUE DEVUELVE GET_BUTTON_STATE(), REVISARLO.
-    break;
-  }
+  Serial.println("Lectura del boton:");
+  Serial.println(buttonState);
+  Serial.println("------------------");
+  Serial.println("prevButtonState:");
+  Serial.println(prevButtonState);
+  Serial.println("------------------");
   */
+//  if (buttonState != prevButtonState) 
+  //{
+    if (buttonState == HIGH)
+    {
+      switch (buttonCurrentState) 
+      {
+        case PRESSED_ONCE:
+          buttonCurrentState = PRESSED_TWICE;
+          event = BUTTON_2_ACTIVATED;
+          prevButtonState = buttonState;
+          return true;
+        break;
 
+        case PRESSED_TWICE:
+          buttonCurrentState = PRESSED_ONCE;
+          event = BUTTON_1_ACTIVATED;
+          prevButtonState = buttonState;
+          return true;
+        break;
+        
+        case NOT_PRESSED:
+          buttonCurrentState = PRESSED_ONCE;
+          event = BUTTON_1_ACTIVATED;
+          prevButtonState = buttonState;
+          return true;
+        break;
+      }
+    }
+  //}
+
+  prevButtonState = buttonState;
   return false;
 }
 
 bool verify_humidity() //también tendría que verificar la cantidad de veces que entró y salió (como un contador asumiendo que caga siempre para facilitarnos la vida)
 {
-  int MIN_HUMIDITY = 1000;
-  int MID_HUMIDITY = 600;
-  int MAX_HUMIDITY = 200;
-  int CLEAN = 9999;
 
   float humedad = analogRead(humidity_sensor);
 
-//capaz al pedo este if.
-  if(humedad == CLEAN)
-  {
-    event = CONTINUE;
-    return true;
-  }
-
-//valores de ejemplo, creo que cuanto menor, mas humedo.
-
-
-  if(humedad >= MIN_HUMIDITY && humedad < MID_HUMIDITY)
+  if(humedad >= HUMIDITY_MIN && humedad < HUMIDITY_MID)
   {
     event = LOW_DIRTINESS;
     return true;
   }
 
-  if(humedad >= MID_HUMIDITY && humedad < MAX_HUMIDITY)
+  if(humedad >= HUMIDITY_MID && humedad < HUMIDITY_MAX)
   {
     event = MID_DIRTINESS;
     return true;
   }
 
-  event = HIGH_DIRTINESS;
+  if (humedad >= HUMIDITY_MAX)
+  {
+    event = HIGH_DIRTINESS;
+    return true;
+  }
+
+  event = NO_DIRTINESS;
   return true;
 }
 
@@ -440,4 +488,13 @@ long read_distance_sensor(int triggerPin, int echoPin)
   //pulseIn: espera a que la señal en echoPin pase de LOW a HIGH y luego toma el tiempo que tarda de pasar de HIGH a LOW y retorna ese tiempo.
   //SEGUN LA PAGINA DE ARDUINO HACE ESO, REPASAR PORQUE NO LO ENTENDÍ
   return pulseIn(echoPin, HIGH);
+}
+
+//---------------------------
+// SERVO IMPLEMENTATION
+//---------------------------
+void servo_init()
+{
+  Servomotor.attach(SERVO_PIN);
+  Servomotor.write(SERVO_OPEN);
 }
