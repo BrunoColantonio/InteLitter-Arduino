@@ -10,6 +10,8 @@
 #define CONTINUE_STATE      8 //DUDOSO, puede salir
 
 
+String states[] = {"INIT", "LIMPIO", "ENTRANDO_GATO", "GATO_AFUERA", "LEVEMENTE_SUCIA", "MEDIANAMENTE_SUCIA", "ALTAMENTE_SUCIA", "VACIANDO", "CONTINUE_STATE"};
+
 //typedef enum {LIMPIO, ENTRANDO_GATO, LEVEMENTE_SUCIA, MEDIANAMENTE_SUCIA, ALTAMENTE_SUCIA, VACIANDO, LLENANDO, CONTINUE /*recomendado este por Esteban*/} Event;
 
 //estados propios del pulsador:
@@ -18,6 +20,10 @@
 #define NOT_PRESSED     2 //capaz no hace falta
 
 //
+
+//estados propios del distanciometro:
+#define DISTANCE_INSIDE  0
+#define DISTANCE_OUTSIDE 1
 
 //colores:
 #define GREEN 1
@@ -28,16 +34,19 @@
 
 
 //eventos:
-#define ENTRANCE_DETECTED   1
-#define EXIT_DETECTED       2
-#define NO_DIRTINESS        3
-#define LOW_DIRTINESS       4
-#define MID_DIRTINESS       5
-#define HIGH_DIRTINESS      6
-#define BUTTON_1_ACTIVATED  7
-#define BUTTON_2_ACTIVATED  8
-#define CONTINUE            10 //para que quede en los estados pasivos (los de suciedad, limpio o vaciando).
+#define ENTRANCE_DETECTED   0
+#define EXIT_DETECTED       1
+#define NO_DIRTINESS        2
+#define LOW_DIRTINESS       3
+#define MID_DIRTINESS       4
+#define HIGH_DIRTINESS      5
+#define BUTTON_1_ACTIVATED  6
+#define BUTTON_2_ACTIVATED  7
+#define CONTINUE            8 //para que quede en los estados pasivos (los de suciedad, limpio o vaciando).
 //
+
+String events[] = {"ENTRANCE_DETECTED", "EXIT_DETECTED", "NO_DIRTINESS", "LOW_DIRTINESS",
+                    "MID_DIRTINESS", "HIGH_DIRTINESS", "BUTTON_1_ACTIVATED", "BUTTON_2_ACTIVATED", "CONTINUE"};
 
 //pines:
 const int distance_sensor = 12;
@@ -64,8 +73,12 @@ int event;
 
 
 bool dentro = false; //capaz no está bien, ya que también es un estado, preguntar o revisar si no son estados internos del sensor de presencia..
+int distance_state;
 
-
+int dist;
+long time_to_object;
+const int min_distance = 30; //sería la distancia a la que estaría la puerta desde el sensor de distancia.
+const float speed_of_sound = 0.01723; //0,03446 / 2, por la fórmula distancia = velocidad * tiempo / 2, donde velocidad = 340m/seg = 0,034cm/seg
 
 typedef struct //esto no sirve
 {
@@ -78,6 +91,8 @@ typedef struct //esto no sirve
 void setup()
 {
   state = INIT;
+  distance_state = DISTANCE_OUTSIDE;
+  Serial.begin(9600);
 }
 
 void loop()
@@ -85,6 +100,18 @@ void loop()
   /*event = */
   get_event();
   state_machine();
+
+  show_state_and_event();
+  delay(500);
+}
+
+void show_state_and_event()
+{
+  Serial.print("Ocurre el evento: ");
+  Serial.print(events[event]);
+  Serial.print(", Se encuentra en el estado: ");
+  Serial.println(states[state]);
+  
 }
 
 void state_machine() { //la lógica de lo que hace cada estado (cambiar el display, led, servo, etc.) puede estar acá adentro o en funciones que se llaman acá o en get_event().
@@ -239,36 +266,71 @@ void get_event()
   event = CONTINUE; //nunca entraría acá por como funciona verify_humidity(), ver si se puede sacar o lo necesitamos.
 }
 
+//FUNCIONA BIEN. PROBADO EN TINKERCAD.
 bool verify_distance()
 {
-  //lógica del lector de distancia. Retorna true si detecta que el gato está adentro y debería retornar true si detecta que el gato salió (no se puede medir contra el máximo)
-  //ya que retornaría true siempre. Hay que usar algún timer o algo para detectar que salió (un booleano creo que queda perfecto).
+//lógica del lector de distancia. Retorna true si detecta que el gato está adentro y debería retornar true si detecta que el gato salió (no se puede medir contra el máximo)
+//ya que retornaría true siempre. Hay que usar algún timer o algo para detectar que salió (un booleano creo que queda perfecto).
 
-  float min = 3; //distancia de la puerta de la caja.
+//con maquina de estados: ESTEBAN ME DIJO QUE ASÍ ESTÁ BIEN Y CON EL BOOLEANO NO ESTARÍA BIEN, PERO JUSTIFICAR POR QUÉ LO HICIMOS ASÍ EN EL INFORME Y EN EL COLOQUIO SABER DEFENDERLO.
+  time_to_object = read_distance_sensor(distance_sensor, distance_sensor);
+  dist = time_to_object * speed_of_sound;
 
-  float dist = digitalRead(distanciometro) / 63; //ver como era que funcionaba
+  switch(distance_state)
+  {
+    case DISTANCE_OUTSIDE:
+      if(dist < min_distance)
+      {
+        distance_state = DISTANCE_INSIDE;
+        event = ENTRANCE_DETECTED;
+        return true;
+      }
+      return false; //si estaba afuera y no entró entonces no retorna un estado que nos interese.
+    break;
 
-  if(dist < min) //&& dentro tambien?
+    case DISTANCE_INSIDE:
+      if(dist >= min_distance)
+      {
+        distance_state = DISTANCE_OUTSIDE;
+        event = EXIT_DETECTED;
+        return true;
+      }
+      return false; //si estaba dentro y no salió entonces no retorna un estado que nos interese.
+    break;
+  }
+
+
+
+//SIN MAQUINA DE ESTADOS:
+/* 
+  time_to_object = read_distance_sensor(distance_sensor, distance_sensor);
+
+  dist = time_to_object * speed_of_sound;
+
+
+  if(dist < min_distance) //&& dentro tambien?
   {
     event = ENTRANCE_DETECTED;
     dentro = true;
     return true;
   }
 
-  if(dist >= min && dentro)
+  if(dist >= min_distance && dentro) //esto no se puede?
   {
     event = EXIT_DETECTED;
-    dentro = false; //para indicar que salió, nos ahorramos el problema de detectar la distancia maxima constantemente y que eso retorne un evento EXIT_DETECTED. retorna solo si ya estaba dentro.
-    return true;
+    dentro = false; //para indicar que salió, nos ahorramos el problema de detectar la distancia maxima constantemente y que eso retorne un evento EXIT_DETECTED.
+    return true; //retorna solo si ya estaba dentro.
   }
 
   return false;
+*/
 }
 
 bool verify_button() //podria inicializarse el boton en PRESSED_TWICE.
 {
-  get_button_state(); //capaz no hace falta y se puede leer de acá.
+//  get_button_state(); //capaz no hace falta y se puede leer de acá.
   
+  /*
   switch(button_state)
   {
     case PRESSED_ONCE:
@@ -285,6 +347,7 @@ bool verify_button() //podria inicializarse el boton en PRESSED_TWICE.
       return false; //NOT_PRESSED. CAPAZ NO VA, PODRÍA SER LO QUE DEVUELVE GET_BUTTON_STATE(), REVISARLO.
     break;
   }
+  */
 
   return false;
 }
@@ -296,7 +359,7 @@ bool verify_humidity() //también tendría que verificar la cantidad de veces qu
   int MAX_HUMIDITY = 200;
   int CLEAN = 9999;
 
-  float humedad = analogRead(sensorHumedad);
+  float humedad = analogRead(humidity_sensor);
 
 //capaz al pedo este if.
   if(humedad == CLEAN)
@@ -324,7 +387,8 @@ bool verify_humidity() //también tendría que verificar la cantidad de veces qu
   return true;
 }
 
-void changeLED(int color){
+void changeLED(int color)
+{
   switch(color){
     case GREEN:
       digitalWrite(ledG, HIGH);
@@ -337,8 +401,8 @@ void changeLED(int color){
       digitalWrite(ledB, LOW);
     break;
     case ORANGE:
-      digitalWrite(ledG, 69);
-      digitalWrite(ledR, HIGH); //magic number, hay que cambiarlo (al pedo).
+      digitalWrite(ledG, 69); //magic number, hay que cambiarlo (al pedo).
+      digitalWrite(ledR, HIGH); 
       digitalWrite(ledB, LOW);
     break;
     case RED:
@@ -354,4 +418,26 @@ void changeLED(int color){
     default:
     break;
   }
+}
+
+//retorna una duración de tiempo.
+long read_distance_sensor(int triggerPin, int echoPin)
+{
+  pinMode(triggerPin, OUTPUT);
+
+  digitalWrite(triggerPin, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(triggerPin, HIGH);
+  delayMicroseconds(10);
+  
+   //Desactivo el trigger
+  digitalWrite(triggerPin, LOW);
+  pinMode(echoPin, INPUT); //se tiene que cambiar el pinMode por código ya que físicamente es el mismo PIN, si fueran 2 pines por separado no hace falta.
+  
+  //Leo el pin de Echo, y retorno el tiempo en
+  //microsegundos en donde se encuentra el objeto
+  //pulseIn: espera a que la señal en echoPin pase de LOW a HIGH y luego toma el tiempo que tarda de pasar de HIGH a LOW y retorna ese tiempo.
+  //SEGUN LA PAGINA DE ARDUINO HACE ESO, REPASAR PORQUE NO LO ENTENDÍ
+  return pulseIn(echoPin, HIGH);
 }
