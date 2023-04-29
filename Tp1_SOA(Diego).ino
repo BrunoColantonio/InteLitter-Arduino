@@ -165,14 +165,14 @@ void state_machine() { //la lógica de lo que hace cada estado (cambiar el displ
       state = LIMPIO;
       //DISPLAY ANIMACION DE INICIO
       lcd.clear();
-	    lcd.print("INICIANDO.");
+      lcd.print("INICIANDO.");
       delay(500);//los delay estan para que se vea como una animacion, si les parece que va a joder el profe saquenlos
       lcd.clear();
       lcd.print("INICIANDO..");
-    	delay(500);//ANIMACION
+      delay(500);//ANIMACION
       lcd.clear();
       lcd.print("INICIANDO...");
-    	delay(500)//ANIMACION
+      delay(500);//ANIMACION
       changeLED(GREEN);
       servo_init();
       //DISPLAY LIMPIO
