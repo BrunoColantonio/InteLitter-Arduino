@@ -132,6 +132,10 @@ typedef struct //esto no sirve
 
 void setup()
 {
+  //DISPPLAY SETUP
+  lcd.begin(16,2);
+  lcd.init();
+  lcd.backlight();
   state = INIT;
   distance_state = DISTANCE_OUTSIDE;
   pinMode(pin_button, INPUT);
