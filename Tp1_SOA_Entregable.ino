@@ -5,6 +5,7 @@
 //---------------------------
 // DISPLAY
 //---------------------------
+
 #define DISPLAY_ADDRESS 32
 #define DISPLAY_MAX_WIDTH 16
 #define DISPLAY_MAX_HEIGHT 2
@@ -22,6 +23,7 @@ void display_print(int width, int height, String msg);
 //---------------------------
 // STATES
 //---------------------------
+
 #define INIT 0
 #define CLEAN 1
 #define CAT_INSIDE 2
@@ -38,6 +40,7 @@ String states[] = {"INIT", "CLEAN", "CAT_INSIDE", "CAT_OUTSIDE", "DIRTY_SLIGHTLY
 //---------------------------
 // RGB HEADERS
 //---------------------------
+
 #define GREEN 1
 #define YELLOW 2
 #define ORANGE 3
@@ -55,6 +58,7 @@ void rgb_init();
 //---------------------------
 // EVENTS
 //---------------------------
+
 #define ENTRANCE_DETECTED   0
 #define EXIT_DETECTED       1
 #define NO_DIRTINESS        2
@@ -71,6 +75,7 @@ String events[] = {"ENTRANCE_DETECTED", "EXIT_DETECTED", "NO_DIRTINESS", "LOW_DI
 //---------------------------
 // SERVO HEADER
 //---------------------------
+
 #define SERVO_PIN 9
 #define SERVO_OPEN 0
 #define SERVO_CLOSE 180
@@ -80,6 +85,7 @@ void servo_init();
 //---------------------------
 // MOISTURE HEADER
 //---------------------------
+
 #define MAX_MOISTURE_VALUE 539.0
 #define POOP 2
 #define LOW_DIRTINESS_MIN_VAL 1
@@ -97,6 +103,7 @@ float moisture_get_points(float moisture);
 //---------------------------
 // DISTANCE SENSOR HEADERS
 //---------------------------
+
 #define DISTANCE_INSIDE  0
 #define DISTANCE_OUTSIDE 1
 #define DISTANCE_SENSOR 12
@@ -114,6 +121,7 @@ long distance_read(int trigger_pin, int echo_pin);
 //---------------------------
 // BUTTON HEADER
 //---------------------------
+
 #define PRESSED_ONCE    0
 #define PRESSED_TWICE   1
 #define NOT_PRESSED     2
@@ -127,6 +135,7 @@ bool verify_button();
 //---------------------------
 // Global Variables
 //---------------------------
+
 int state;
 int event;
 bool exited = false;
@@ -147,12 +156,6 @@ void loop()
   get_event();
   state_machine();
 }
-
-/*
-  Esta funcion lee el estado en el que se encuetra el sistema
-  segun en el estado en que se encuetre reaccionara a los eventos
-  de distintas maneras.
-*/
 
 // This function reads the state of the system and 
 // according to that will react in differents ways
