@@ -28,14 +28,14 @@ void display_print(int width, int height, String msg);
 #define CLEAN 1
 #define CAT_INSIDE 2
 #define CAT_OUTSIDE 3
-#define DIRTY_SLIGHTLY 4
-#define DIRTY_MEDIUMLY 5
-#define DIRTY_HIGHLY 6
+#define SLIGHTLY_DIRTY 4
+#define MEDIUMLY_DIRTY 5
+#define HIGHLY_DIRTY 6
 #define CLEANING  7
 #define CONTINUE_STATE 8 
 
 
-String states[] = {"INIT", "CLEAN", "CAT_INSIDE", "CAT_OUTSIDE", "DIRTY_SLIGHTLY", "DIRTY_MEDIUMLY", "DIRTY_HIGHLY", "CLEANING", "CONTINUE_STATE"};
+String states[] = {"INIT", "CLEAN", "CAT_INSIDE", "CAT_OUTSIDE", "DIRTY_SLIGHTLY", "DIRTY_MEDIUMLY", "DIRTY_HIGHLY", "CLEANING"};
 
 //---------------------------
 // RGB HEADERS
@@ -157,9 +157,6 @@ void loop()
   state_machine();
 }
 
-// This function reads the state of the system and 
-// according to that will react in differents ways
-// to events that the system capture.
 void state_machine() { 
   switch(state)
   {
@@ -168,7 +165,7 @@ void state_machine() {
       LCD.clear();
       display_print(DISPLAY_WIDTH_0, DISPLAY_HEIGHT_0, "INICIANDO...");
       LCD.clear();
-      display_print(DISPLAY_WIDTH_1, DISPLAY_HEIGHT_0, "ESTADO: CLEAN");
+      display_print(DISPLAY_WIDTH_1, DISPLAY_HEIGHT_0, "ESTADO: LIMPIO");
     break;
     case CLEAN:
       switch(event)
@@ -181,7 +178,7 @@ void state_machine() {
         break;
         case BUTTON_1_ACTIVATED:
           LCD.clear();
-          display_print(DISPLAY_WIDTH_4, DISPLAY_HEIGHT_0, "CLEANING");
+          display_print(DISPLAY_WIDTH_4, DISPLAY_HEIGHT_0, "LIMPIANDO");
           display_print(DISPLAY_WIDTH_2, DISPLAY_HEIGHT_1, "SENSORES: OFF");
           changeLED(BLUE);
           state = CLEANING;
@@ -213,25 +210,25 @@ void state_machine() {
       {
         case NO_DIRTINESS:
           LCD.clear();
-          display_print(DISPLAY_WIDTH_1, DISPLAY_HEIGHT_0, "ESTADO: CLEAN");
+          display_print(DISPLAY_WIDTH_1, DISPLAY_HEIGHT_0, "ESTADO: LIMPIO");
           state = CLEAN;
         break;
         case LOW_DIRTINESS:
           LCD.clear();
           display_print(DISPLAY_WIDTH_2, DISPLAY_HEIGHT_0, "ESTADO: LEVE");
-          state = DIRTY_SLIGHTLY;
+          state = SLIGHTLY_DIRTY;
           changeLED(YELLOW);
         break;
         case MID_DIRTINESS:
           LCD.clear();
           display_print(DISPLAY_WIDTH_1, DISPLAY_HEIGHT_0, "ESTADO: MEDIO");
-          state = DIRTY_MEDIUMLY;
+          state = MEDIUMLY_DIRTY;
           changeLED(ORANGE);
         break;
         case HIGH_DIRTINESS:
           LCD.clear();
           display_print(DISPLAY_WIDTH_0, DISPLAY_HEIGHT_0, "ESTADO: CRITICO");
-          state = DIRTY_HIGHLY;
+          state = HIGHLY_DIRTY;
           changeLED(RED);
           Servomotor.write(SERVO_CLOSE);
         break;
@@ -240,7 +237,7 @@ void state_machine() {
       }
     break;
 
-    case DIRTY_SLIGHTLY: 
+    case SLIGHTLY_DIRTY: 
       switch(event)
       {
         case ENTRANCE_DETECTED:
@@ -264,7 +261,7 @@ void state_machine() {
       }    
     break;
 
-    case DIRTY_MEDIUMLY:
+    case MEDIUMLY_DIRTY:
       switch(event)
       {
         case ENTRANCE_DETECTED:
@@ -275,7 +272,7 @@ void state_machine() {
         break;
         case BUTTON_1_ACTIVATED:
           LCD.clear();
-          display_print(DISPLAY_WIDTH_4, DISPLAY_HEIGHT_0, "CLEANING");
+          display_print(DISPLAY_WIDTH_4, DISPLAY_HEIGHT_0, "LIMPIANDO");
           display_print(DISPLAY_WIDTH_2, DISPLAY_HEIGHT_1, "Sensores: OFF");
           changeLED(BLUE);
           state = CLEANING;
@@ -288,12 +285,12 @@ void state_machine() {
       }    
     break;
 
-    case DIRTY_HIGHLY:
+    case HIGHLY_DIRTY:
       switch(event)
       {
         case BUTTON_1_ACTIVATED:
           LCD.clear();
-          display_print(DISPLAY_WIDTH_4, DISPLAY_HEIGHT_0, "CLEANING");
+          display_print(DISPLAY_WIDTH_4, DISPLAY_HEIGHT_0, "LIMPIANDO");
           display_print(DISPLAY_WIDTH_2, DISPLAY_HEIGHT_1, "Sensores: OFF");
           changeLED(BLUE);
           state = CLEANING;
@@ -311,7 +308,7 @@ void state_machine() {
       {
         case BUTTON_2_ACTIVATED:
           LCD.clear();
-          display_print(DISPLAY_WIDTH_1, DISPLAY_HEIGHT_0, "ESTADO: CLEAN");
+          display_print(DISPLAY_WIDTH_1, DISPLAY_HEIGHT_0, "ESTADO: LIMPIO");
           state = CLEAN;
           prev_moisture = INITIAL_MOISURE;
           dirtiness_level = INITIAL_DIRTINESS;
@@ -325,16 +322,11 @@ void state_machine() {
       }
     break;
 
-    case CONTINUE_STATE:
-    break;
-
     default:
     break;
   }
 }
 
-// This function verifies all the possible events
-// that could happen on this system.
 void get_event()
 {
   if(verify_distance() == true || verify_button() == true || verify_moisture() == true)
@@ -342,9 +334,6 @@ void get_event()
   event = CONTINUE;
 }
 
-// This function verify all the possible events
-// that could happen according to the distance
-// sensor.
 bool verify_distance()
 {
   time_to_object = distance_read(DISTANCE_SENSOR, DISTANCE_SENSOR);
@@ -374,8 +363,6 @@ bool verify_distance()
   }
 }
 
-// This function verify all the possible events
-// that could happen according to the button.
 bool verify_button()
 {
   button_state = digitalRead(PIN_BUTTON);
@@ -414,9 +401,6 @@ bool verify_button()
   return false;
 }
 
-// This function verify all the possible events
-// that could happen according to the moisture
-// sensor.
 bool verify_moisture()
 { 
   float moisture = analogRead(moisture_sensor);
@@ -451,7 +435,6 @@ bool verify_moisture()
   return false;
 }
 
-// This function change the color of the RGB LED.
 void changeLED(int color)
 {
   switch(color){
@@ -491,7 +474,6 @@ void changeLED(int color)
 // SERVO IMPLEMENTATION
 //---------------------------
 
-// This function initialize the Servo.
 void servo_init()
 {
   Servomotor.attach(SERVO_PIN);
@@ -502,7 +484,6 @@ void servo_init()
 // DISPLAY IMPLEMENTATION
 //---------------------------
 
-// This function initialize the Display.
 void display_init()
 {
   LCD.begin(DISPLAY_MAX_WIDTH, DISPLAY_MAX_HEIGHT);
@@ -510,7 +491,6 @@ void display_init()
   LCD.backlight();
 }
 
-// This function prints a message on the Display.
 void display_print(int width, int height, String msg)
 {
   LCD.setCursor(width, height);
@@ -522,8 +502,6 @@ void display_print(int width, int height, String msg)
 // MOISTURE SENSOR IMPLEMENTATION
 //---------------------------
 
-// This function get the points of moisture who
-// are used to measure the dirtiness of the system.
 float moisture_get_points(float moisture)
 {
   return (moisture / MAX_MOISTURE_VALUE) * MOISTURE_MAX_POINTS;
@@ -533,14 +511,11 @@ float moisture_get_points(float moisture)
 // DISTANCE SENSOR IMPLEMENTATION
 //---------------------------
 
-// This function initialize the Distance Sensor.
 void distance_sensor_init()
 {
   distance_state = DISTANCE_OUTSIDE;
 }
 
-// This function returns the distance that the
-// sensor gets.
 long distance_read(int trigger_pin, int echo_pin)
 {
   pinMode(trigger_pin, OUTPUT);
@@ -562,7 +537,6 @@ long distance_read(int trigger_pin, int echo_pin)
 // RGB IMPLEMENTATION
 //---------------------------
 
-// This function initialize the RGB LED.
 void rgb_init()
 {
   pinMode(PIN_LED_RED, OUTPUT);
@@ -576,7 +550,6 @@ void rgb_init()
 // BUTTON IMPLEMENTATION
 //---------------------------
 
-// This function initialize the Button.
 void button_init()
 {
   pinMode(PIN_BUTTON, INPUT);
