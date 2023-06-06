@@ -1,6 +1,6 @@
 #include <Servo.h>
 #include <Wire.h>
-#include <LiquidCrystal_I2C.h>
+#include <rgb_lcd.h>
 #include <SoftwareSerial.h>
 
 //---------------------------
@@ -17,7 +17,7 @@
 #define DISPLAY_WIDTH_4 4
 #define DISPLAY_HEIGHT_0 0
 #define DISPLAY_HEIGHT_1 1
-LiquidCrystal_I2C LCD(DISPLAY_ADDRESS, DISPLAY_MAX_WIDTH, DISPLAY_MAX_HEIGHT);
+rgb_lcd LCD;
 void display_init();
 void display_print(int width, int height, String msg);
 
@@ -145,7 +145,7 @@ bool verify_button();
 String mensaje;
 void bluetooth_init();
 bool verify_bluetooth();
-SoftwareSerial Bluetooth;
+SoftwareSerial Bluetooth(PIN_BLUETOOTH_0, PIN_BLUETOOTH_1);
 
 //---------------------------
 // Global Variables
@@ -579,8 +579,6 @@ void servo_init()
 void display_init()
 {
   LCD.begin(DISPLAY_MAX_WIDTH, DISPLAY_MAX_HEIGHT);
-  LCD.init();
-  LCD.backlight();
 }
 
 void display_print(int width, int height, String msg)
@@ -652,7 +650,6 @@ void button_init()
 //---------------------------
 void bluetooth_init()
 {
-    Bluetooth(PIN_BLUETOOTH_0, PIN_BLUETOOTH_1);
     Bluetooth.begin(BLUETOOTH_BPS);
 }
 
