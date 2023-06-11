@@ -97,6 +97,8 @@ void servo_init();
 #define MOISTURE_MAX_POINTS 10.0
 #define INITIAL_MOISURE 0
 #define INITIAL_DIRTINESS 0
+#define MOISTURE_MSG_SIZE 50
+char moisture_msg[MOISTURE_MSG_SIZE];
 const int moisture_sensor = A0;
 float prev_moisture = 0.0;
 float dirtiness_level = 0;
@@ -139,13 +141,19 @@ bool verify_button();
 //---------------------------
 // BLUETOOTH HEADER
 //---------------------------
-#define PIN_BLUETOOTH_0 0
-#define PIN_BLUETOOTH_1 1
-#define BLUETOOTH_BPS 38400
-String mensaje;
+#define PIN_BLUETOOTH_RX 10 // Arduino RX
+#define PIN_BLUETOOTH_TX 11 // Arduino TX
+#define BLUETOOTH_BPS 9600
+#define BLUETOOTH_MSG_STOP 'S'
+#define BLUETOOTH_MSG_CLEAN 'C'
+#define BLUETOOTH_MSG_GET_STATE 's'
+#define BLUETOOTH_MSG_GET_HUMIDITY 'h'
+char bt_msg;
 void bluetooth_init();
 bool verify_bluetooth();
-SoftwareSerial Bluetooth(PIN_BLUETOOTH_0, PIN_BLUETOOTH_1);
+void bluetooth_send_humidity();
+void bluetooth_send_state();
+SoftwareSerial Bluetooth(PIN_BLUETOOTH_RX, PIN_BLUETOOTH_TX);
 
 //---------------------------
 // Global Variables
@@ -206,7 +214,7 @@ void state_machine() {
             bluetooth_send_state();
             break;
         case GET_HUMIDITY:
-            Bluetooth.write(analogRead(moisture_sensor));
+            bluetooth_send_humidity();
             break;
         default:
         break;
@@ -226,7 +234,7 @@ void state_machine() {
             bluetooth_send_state();
             break;
         case GET_HUMIDITY:
-            Bluetooth.write(analogRead(moisture_sensor));
+            bluetooth_send_humidity();
             break;
         default:
         break;
@@ -264,7 +272,7 @@ void state_machine() {
             bluetooth_send_state();
             break;
         case GET_HUMIDITY:
-            Bluetooth.write(analogRead(moisture_sensor));
+            bluetooth_send_humidity();
             break;
         default:
         break;
@@ -292,7 +300,7 @@ void state_machine() {
             bluetooth_send_state();
             break;
         case GET_HUMIDITY:
-            Bluetooth.write(analogRead(moisture_sensor));
+            bluetooth_send_humidity();
             break;
         case CONTINUE:
         break;
@@ -322,7 +330,7 @@ void state_machine() {
             bluetooth_send_state();
             break;
         case GET_HUMIDITY:
-            Bluetooth.write(analogRead(moisture_sensor));
+            bluetooth_send_humidity();
             break;
         case CONTINUE:
         break;
@@ -346,7 +354,7 @@ void state_machine() {
             bluetooth_send_state();
             break;
         case GET_HUMIDITY:
-            Bluetooth.write(analogRead(moisture_sensor));
+            bluetooth_send_humidity();
             break;
         case CONTINUE:
         break;
@@ -371,7 +379,7 @@ void state_machine() {
             bluetooth_send_state();
             break;
         case GET_HUMIDITY:
-            Bluetooth.write(analogRead(moisture_sensor));
+            bluetooth_send_humidity();
             break;
         case CONTINUE:
         break;
@@ -396,25 +404,25 @@ bool verify_bluetooth()
 {
   if(Bluetooth.available())
   {
-    mensaje = Bluetooth.read();
-    if(mensaje == "detener")
+    bt_msg = Bluetooth.read();
+    if(bt_msg == BLUETOOTH_MSG_STOP)
     {
         event = BUTTON_1_ACTIVATED;
         return true;
     }
-    if(mensaje == "limpiada")
+    if(bt_msg == BLUETOOTH_MSG_CLEAN)
     {
         event = BUTTON_2_ACTIVATED;
         return true;
     }
 
-    if(mensaje == "getState")
+    if(bt_msg == BLUETOOTH_MSG_GET_STATE)
     {
         event = GET_STATE;
         return true;
     }
 
-    if (mensaje == "getHumidity")
+    if (bt_msg == BLUETOOTH_MSG_GET_HUMIDITY)
     {
         event = GET_HUMIDITY;
         return true;
@@ -652,36 +660,42 @@ void bluetooth_init()
     Bluetooth.begin(BLUETOOTH_BPS);
 }
 
+void bluetooth_send_humidity()
+{
+  snprintf(moisture_msg, MOISTURE_MSG_SIZE, "InteLitter Humidity: %d\n", analogRead(moisture_sensor));
+  Bluetooth.write(moisture_msg);
+}
+
 void bluetooth_send_state()
 {
     switch (state)
     {
     case INIT:
-        Bluetooth.write("INICIO");
+        Bluetooth.write("InteLitter Estado: INICIO\n");
         break;
     case CLEAN:
-        Bluetooth.write("LIMPIO");
+        Bluetooth.write("InteLitter Estado: LIMPIO\n");
         break;
     case CAT_INSIDE:
-        Bluetooth.write("GATO DENTRO");
+        Bluetooth.write("InteLitter Estado: GATO DENTRO\n");
         break;
     case CAT_OUTSIDE:
-        Bluetooth.write("GATO FUERA");
+        Bluetooth.write("InteLitter Estado: GATO FUERA\n");
         break;
     case SLIGHTLY_DIRTY:
-        Bluetooth.write("POCO SUCIA");
+        Bluetooth.write("InteLitter Estado: POCO SUCIA\n");
         break;
     case MEDIUMLY_DIRTY:
-        Bluetooth.write("MEDIANAMENTE SUCIA");
+        Bluetooth.write("InteLitter Estado: MEDIANAMENTE SUCIA\n");
         break;
     case HIGHLY_DIRTY:
-        Bluetooth.write("SUCIA");
+        Bluetooth.write("InteLitter Estado: SUCIA\n");
         break;
     case CLEANING:
-        Bluetooth.write("LIMPIANDO");
+        Bluetooth.write("InteLitter Estado: LIMPIANDO\n");
         break;
     case CONTINUE_STATE:
-        Bluetooth.write("CONTINUA");
+        Bluetooth.write("InteLitter Estado: CONTINUA\n");
         break;
     default:
         break;
