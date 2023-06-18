@@ -1,4 +1,4 @@
-package com.soa.intelitter;
+package com.soa.intelitter_soa;
 
 import org.junit.Test;
 
