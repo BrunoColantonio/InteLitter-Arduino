@@ -1,8 +1,5 @@
 package com.soa.intelitter_soa;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -12,11 +9,13 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -24,6 +23,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
+
     // Bluetooth Variables
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothDevice bluetoothDevice;
@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
 
     // Aux variables
     private boolean isStopped = false;
+    private int STATE = InteLitter.STATE_CLEAN;
 
     // On Click Listener functions
     View.OnClickListener cleanFunction;
@@ -73,15 +74,20 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         outputStream = bluetoothSocket.getOutputStream();
                         inputStream = bluetoothSocket.getInputStream();
-                    } catch (IOException e) {
-
-                    }
+                    } catch (IOException e) {}
                 } else {
                     // Paso 1: Obtener el Bluetooth Device.
                     if (
-                            ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED
-                            ||
-                            ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED
+                            ActivityCompat.checkSelfPermission(
+                                    this,
+                                    android.Manifest.permission.BLUETOOTH
+                            ) !=
+                                    PackageManager.PERMISSION_GRANTED ||
+                                    ActivityCompat.checkSelfPermission(
+                                            this,
+                                            Manifest.permission.BLUETOOTH_ADMIN
+                                    ) !=
+                                            PackageManager.PERMISSION_GRANTED
                     ) {
                         // TODO: Consider calling
                         //    ActivityCompat#requestPermissions
@@ -104,9 +110,9 @@ public class MainActivity extends AppCompatActivity {
                     if (bluetoothDevice != null) {
                         UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
                         try {
-                            bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(uuid);
-                        } catch (IOException e) {
-                        }
+                            bluetoothSocket =
+                                    bluetoothDevice.createRfcommSocketToServiceRecord(uuid);
+                        } catch (IOException e) {}
                     }
 
                     // Paso 3: Conectar el Bluetooth Socket
@@ -115,11 +121,7 @@ public class MainActivity extends AppCompatActivity {
                             bluetoothSocket.connect();
                             outputStream = bluetoothSocket.getOutputStream();
                             inputStream = bluetoothSocket.getInputStream();
-                        } catch (IOException e) {
-
-                        }
-
-
+                        } catch (IOException e) {}
                     }
                 }
             }
@@ -136,12 +138,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void createBluetoothThread() {
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                readBluetooth();
-            }
-        });
+        Thread thread = new Thread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        readBluetooth();
+                    }
+                }
+        );
 
         thread.start();
     }
@@ -150,27 +154,32 @@ public class MainActivity extends AppCompatActivity {
         byte[] buffer = new byte[1024];
         int bytesRead;
 
-        while(true) {
+        while (true) {
             try {
-                bytesRead = inputStream.read(buffer);
-                if (bytesRead != -1) {
-                    String data = new String(buffer, 0, bytesRead);
-                    handlerStateTextView.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            handleDataFromBluetooth(Integer.parseInt(data));
-                        }
-                    });
-
+                if (inputStream != null) {
+                    bytesRead = inputStream.read(buffer);
+                    if (bytesRead != -1) {
+                        String data = new String(buffer, 0, bytesRead);
+                        handlerStateTextView.post(
+                                new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        handleDataFromBluetooth(Integer.parseInt(data));
+                                    }
+                                }
+                        );
+                    }
                 }
             } catch (IOException e) {
-                break;
+                Log.i("Error", e.getLocalizedMessage());
+                // break;
             }
         }
     }
 
     private void handleDataFromBluetooth(Integer value) {
         if (InteLitter.isStateValue(value)) {
+            STATE = value;
             handleStateTextView(value);
             return;
         }
@@ -184,20 +193,22 @@ public class MainActivity extends AppCompatActivity {
         sensorActivityButton = (Button) findViewById(R.id.activityButton);
 
         // Set Listeners to the buttons.
-        cleanFunction = new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                clean();
-            }
-        };
+        cleanFunction =
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        clean();
+                    }
+                };
         cleanButton.setOnClickListener(cleanFunction);
 
-        sensorActivityFunction = new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startSensorActivity();
-            }
-        };
+        sensorActivityFunction =
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        startSensorActivity();
+                    }
+                };
         sensorActivityButton.setOnClickListener(sensorActivityFunction);
     }
 
@@ -232,7 +243,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     // Buttons Functions
     private void clean() {
         sendMessageBluetooth(isStopped ? 'C' : 'S');
@@ -241,6 +251,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void startSensorActivity() {
         Intent intent = new Intent(MainActivity.this, SensorActivity.class);
+        intent.putExtra("state", STATE);
         startActivity(intent);
     }
 
@@ -248,9 +259,10 @@ public class MainActivity extends AppCompatActivity {
     private void setIsStopped() {
         isStopped = !isStopped;
         String txt = isStopped ? "LIMPIAR" : "DETENER";
-        int color =  Color.parseColor(isStopped ? LitterColors.GREEN : LitterColors.BLUE);
+        int color = Color.parseColor(
+                isStopped ? LitterColors.GREEN : LitterColors.BLUE
+        );
         cleanButton.setText(txt);
         cleanButton.setBackgroundColor(color);
     }
-
 }
