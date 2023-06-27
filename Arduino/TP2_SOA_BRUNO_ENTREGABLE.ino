@@ -342,7 +342,10 @@ void get_event()
 void change_state(int new_state)
 {
   state = new_state;
-  bluetooth_send_state();
+  if(state != CAT_OUTSIDE)
+  {
+    bluetooth_send_state();
+  }
 }
 
 bool verify_bluetooth()
