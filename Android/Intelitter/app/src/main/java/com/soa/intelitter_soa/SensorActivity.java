@@ -13,7 +13,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class SensorActivity
         extends AppCompatActivity
-        implements SensorEventListener {
+        implements SensorEventListener 
+{
 
     // Constants
     private static final float ACCELEROMETER_MAX_VALUE = 13;
@@ -30,7 +31,8 @@ public class SensorActivity
     private MediaPlayer mediaPlayer;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) 
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sensor);
 
@@ -43,16 +45,19 @@ public class SensorActivity
         mediaPlayer = MediaPlayer.create(this, getMediaPlayerContent());
 
         mediaPlayer.setOnCompletionListener(
-                new MediaPlayer.OnCompletionListener() {
+                new MediaPlayer.OnCompletionListener() 
+                {
                     @Override
-                    public void onCompletion(MediaPlayer mediaPlayer) {
+                    public void onCompletion(MediaPlayer mediaPlayer) 
+                    {
                         mediaPlayer.stop();
                         mediaPlayer.release();
                     }
                 }
         );
 
-        if (sensor == null) {
+        if (sensor == null) 
+        {
             Toast
                     .makeText(
                             this,
@@ -61,7 +66,9 @@ public class SensorActivity
                     )
                     .show();
             finish();
-        } else {
+        } 
+        else 
+        {
             sensorManager.registerListener(
                     this,
                     sensor,
@@ -71,16 +78,19 @@ public class SensorActivity
     }
 
     @Override
-    protected void onStop() {
+    protected void onStop() 
+    {
         super.onStop();
         sensorManager.unregisterListener(this);
-        if (mediaPlayer != null) {
+        if (mediaPlayer != null) 
+        {
             mediaPlayer.release();
         }
     }
 
     @Override
-    protected void onResume() {
+    protected void onResume() 
+    {
         super.onResume();
         // Solicitamos acceso a los sensores a utilizar
         sensorManager.registerListener(
@@ -91,18 +101,22 @@ public class SensorActivity
     }
 
     @Override
-    protected void onPause() {
+    protected void onPause() 
+    {
         sensorManager.unregisterListener(this);
-        if (mediaPlayer != null) {
+        if (mediaPlayer != null) 
+        {
             mediaPlayer.release();
         }
         super.onPause();
     }
 
     @Override
-    public void onSensorChanged(SensorEvent sensorEvent) {
+    public void onSensorChanged(SensorEvent sensorEvent) 
+    {
         if (sensorEvent.sensor.getType() != Sensor.TYPE_ACCELEROMETER) return;
-        if (isShaking(sensorEvent)) {
+        if (isShaking(sensorEvent)) 
+        {
             Log.i("MediaPlayer", "mediaPlayer.start()");
             mediaPlayer.start();
         }
@@ -111,7 +125,8 @@ public class SensorActivity
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {}
 
-    private boolean isShaking(SensorEvent sensorEvent) {
+    private boolean isShaking(SensorEvent sensorEvent) 
+    {
         return (
                 Math.abs(sensorEvent.values[X_POSITION]) > ACCELEROMETER_MAX_VALUE ||
                         Math.abs(sensorEvent.values[Y_POSITION]) > ACCELEROMETER_MAX_VALUE ||
@@ -119,8 +134,10 @@ public class SensorActivity
         );
     }
 
-    private int getMediaPlayerContent() {
-        switch (STATE) {
+    private int getMediaPlayerContent() 
+    {
+        switch (STATE) 
+        {
             case InteLitter.STATE_CLEAN:
                 return R.raw.clean;
             case InteLitter.STATE_SLIGHTLY_DIRTY:

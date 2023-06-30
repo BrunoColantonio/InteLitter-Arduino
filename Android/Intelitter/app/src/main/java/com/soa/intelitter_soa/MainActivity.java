@@ -1,6 +1,7 @@
 package com.soa.intelitter_soa;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -12,8 +13,8 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import java.io.IOException;
@@ -25,218 +26,201 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity {
 
     // Bluetooth Variables
-    private BluetoothAdapter bluetoothAdapter;
-    private BluetoothDevice bluetoothDevice;
-    private BluetoothSocket bluetoothSocket;
-    private OutputStream outputStream;
-    private InputStream inputStream;
+    private BluetoothAdapter bluetoothAdapter_G;
+    private BluetoothDevice bluetoothDevice_G;
+    private BluetoothSocket bluetoothSocket_G;
+    private OutputStream outputStream_G;
+    private InputStream inputStream_G;
 
     // Component Variables
-    private TextView stateTextView;
-    private Button cleanButton;
-    private Button sensorActivityButton;
+    private TextView stateTextView_G;
+    private Button cleanButton_G;
+    private Button sensorActivityButton_G;
 
     // Aux variables
-    private boolean isStopped = false;
-    private int STATE = InteLitter.STATE_CLEAN;
+    private boolean isStopped_G = false;
+    private int state_G = InteLitter.STATE_CLEAN;
 
     // On Click Listener functions
-    View.OnClickListener cleanFunction;
-    View.OnClickListener sensorActivityFunction;
+    View.OnClickListener cleanFunction_G;
+    View.OnClickListener sensorActivityFunction_G;
 
     // Handlers for Threads
-    Handler handlerStateTextView = new Handler();
+    Handler handlerStateTextView_G = new Handler();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        initBluetooth();
-        initComponentVariables();
-        createBluetoothThread();
+        _InitBluetooth();
+        _InitComponentVariables();
+        _CreateBluetoothThread();
     }
 
     // Bluetooth Functions
-    private void initBluetooth() {
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (bluetoothAdapter == null) {
-            // El dispositivo no es compatible con Bluetooth
-            // Maneja esta situación según tus necesidades
+    private void _InitBluetooth() {
+
+        bluetoothAdapter_G = BluetoothAdapter.getDefaultAdapter();
+
+        if (bluetoothAdapter_G == null) {
+            Toast.makeText(this, "Este dispositivo no tiene Bluetooth :(", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+
+        if (!bluetoothAdapter_G.isEnabled()) {
+            Toast.makeText(this, "El Bluetooth esta desactivado :|", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+
+        if (bluetoothSocket_G != null) {
+            _GetBluetoothStreams();
         } else {
-            if (!bluetoothAdapter.isEnabled()) {
-                // Bluetooth esta desactivado.
-                // Solicitamos al usuario que lo habilite.
-            } else {
-                // Bluetooth esta activado.
-                // Preparamos el entorno para enviar y recibir datos.
-                if (bluetoothSocket != null) {
-                    try {
-                        outputStream = bluetoothSocket.getOutputStream();
-                        inputStream = bluetoothSocket.getInputStream();
-                    } catch (IOException e) {}
-                } else {
-                    // Paso 1: Obtener el Bluetooth Device.
-                    if (
-                            ActivityCompat.checkSelfPermission(
-                                    this,
-                                    android.Manifest.permission.BLUETOOTH
-                            ) !=
-                                    PackageManager.PERMISSION_GRANTED ||
-                                    ActivityCompat.checkSelfPermission(
-                                            this,
-                                            Manifest.permission.BLUETOOTH_ADMIN
-                                    ) !=
-                                            PackageManager.PERMISSION_GRANTED
-                    ) {
-                        // TODO: Consider calling
-                        //    ActivityCompat#requestPermissions
-                        // here to request the missing permissions, and then overriding
-                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                        //                                          int[] grantResults)
-                        // to handle the case where the user grants the permission. See the documentation
-                        // for ActivityCompat#requestPermissions for more details.
-                        return;
-                    }
-                    Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-                    for (BluetoothDevice device : pairedDevices) {
-                        if (device.getName().equals("HC-05")) {
-                            bluetoothDevice = device;
-                            break;
-                        }
-                    }
+            _PairDevicesBluetooth();
+        }
+    }
 
-                    // Paso 2: Crear el Bluetooth Socket
-                    if (bluetoothDevice != null) {
-                        UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-                        try {
-                            bluetoothSocket =
-                                    bluetoothDevice.createRfcommSocketToServiceRecord(uuid);
-                        } catch (IOException e) {}
-                    }
+    private void _GetBluetoothStreams() {
+        try {
+            outputStream_G = bluetoothSocket_G.getOutputStream();
+            inputStream_G = bluetoothSocket_G.getInputStream();
+        } catch (IOException e) {
+            Toast.makeText(this, "Error al obtener los stream del Bluetooth.", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+    }
 
-                    // Paso 3: Conectar el Bluetooth Socket
-                    if (bluetoothSocket != null) {
-                        try {
-                            bluetoothSocket.connect();
-                            outputStream = bluetoothSocket.getOutputStream();
-                            inputStream = bluetoothSocket.getInputStream();
-                        } catch (IOException e) {}
-                    }
-                }
+    private void _PairDevicesBluetooth() {
+        _GetBluetoothDevice();
+        _CreateBluetoothSocket();
+        _ConnectBluetoothSocket();
+    }
+
+    private void _GetBluetoothDevice() {
+        int btPermission = ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH);
+        int btAdminPermission = ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN);
+
+        if (btPermission != PackageManager.PERMISSION_GRANTED ||
+                btAdminPermission != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        Set<BluetoothDevice> pairedDevices = bluetoothAdapter_G.getBondedDevices();
+
+        for (BluetoothDevice device : pairedDevices) {
+            if (device.getName().equals("HC-05")) {
+                bluetoothDevice_G = device;
+                break;
             }
         }
     }
 
-    private boolean sendMessageBluetooth(char msg) {
+    @SuppressLint("MissingPermission")
+    private void _CreateBluetoothSocket() {
+        if (bluetoothDevice_G != null) {
+            UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+            try {
+                bluetoothSocket_G = bluetoothDevice_G.createRfcommSocketToServiceRecord(uuid);
+            } catch (IOException e) {
+                Toast.makeText(this, "Error al crear el Socket de Bluetooth.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void _ConnectBluetoothSocket() {
+        if (bluetoothSocket_G != null) {
+            try {
+                bluetoothSocket_G.connect();
+                outputStream_G = bluetoothSocket_G.getOutputStream();
+                inputStream_G = bluetoothSocket_G.getInputStream();
+            } catch (IOException e) {
+                Toast.makeText(this, "Error al conectar el Socket Bluetooth.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private boolean _SendMessageBluetooth(char msg) {
         try {
-            outputStream.write((byte) msg);
+            outputStream_G.write((byte) msg);
         } catch (IOException e) {
             return false;
         }
         return true;
     }
 
-    private void createBluetoothThread() {
-        Thread thread = new Thread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        readBluetooth();
-                    }
-                }
-        );
-
+    private void _CreateBluetoothThread() {
+        Thread thread = new Thread(this::_ReadBluetooth);
         thread.start();
     }
 
-    private void readBluetooth() {
+    private void _ReadBluetooth() {
         byte[] buffer = new byte[1024];
         int bytesRead;
 
         while (true) {
             try {
-                if (inputStream != null) {
-                    bytesRead = inputStream.read(buffer);
+                if (inputStream_G != null) {
+                    bytesRead = inputStream_G.read(buffer);
                     if (bytesRead != -1) {
                         String data = new String(buffer, 0, bytesRead);
-                        handlerStateTextView.post(
-                                new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        handleDataFromBluetooth(Integer.parseInt(data));
-                                    }
-                                }
-                        );
+                        handlerStateTextView_G.post(
+                                () -> _HandleDataFromBluetooth(Integer.parseInt(data)));
                     }
                 }
             } catch (IOException e) {
                 Log.i("Error", e.getLocalizedMessage());
-                // break;
             }
         }
     }
 
-    private void handleDataFromBluetooth(Integer value) {
+    private void _HandleDataFromBluetooth(Integer value) {
         if (InteLitter.isStateValue(value)) {
-            STATE = value;
-            handleStateTextView(value);
-            return;
+            state_G = value;
+            _HandleStateTextView(value);
         }
     }
 
     // Components Functions
-    private void initComponentVariables() {
+    private void _InitComponentVariables() {
         // Get the references from the UI
-        stateTextView = (TextView) findViewById(R.id.inteLitterState);
-        cleanButton = (Button) findViewById(R.id.cleanButton);
-        sensorActivityButton = (Button) findViewById(R.id.activityButton);
+        stateTextView_G = findViewById(R.id.inteLitterState);
+        cleanButton_G = findViewById(R.id.cleanButton_G);
+        sensorActivityButton_G = findViewById(R.id.activityButton);
 
         // Set Listeners to the buttons.
-        cleanFunction =
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        clean();
-                    }
-                };
-        cleanButton.setOnClickListener(cleanFunction);
+        cleanFunction_G = view -> _Clean();
+        cleanButton_G.setOnClickListener(cleanFunction_G);
 
-        sensorActivityFunction =
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        startSensorActivity();
-                    }
-                };
-        sensorActivityButton.setOnClickListener(sensorActivityFunction);
+        sensorActivityFunction_G = view -> _StartSensorActivity();
+        sensorActivityButton_G.setOnClickListener(sensorActivityFunction_G);
     }
 
-    private void setStateTextView(String txt, String hexColor) {
-        stateTextView.setText(txt);
+    private void _SetStateTextView(String txt, String hexColor) {
+        stateTextView_G.setText(txt);
         int color = Color.parseColor(hexColor);
-        stateTextView.setBackgroundColor(color);
+        stateTextView_G.setBackgroundColor(color);
     }
 
-    private void handleStateTextView(Integer data) {
+    private void _HandleStateTextView(Integer data) {
         switch (data) {
             case InteLitter.STATE_CLEAN:
-                setStateTextView("LIMPIO", LitterColors.BLUE);
+                _SetStateTextView("LIMPIO", LitterColors.BLUE);
                 break;
             case InteLitter.STATE_SLIGHTLY_DIRTY:
-                setStateTextView("POCO SUCIO", LitterColors.GREEN);
+                _SetStateTextView("POCO SUCIO", LitterColors.GREEN);
                 break;
             case InteLitter.STATE_MID_DIRTY:
-                setStateTextView("SUCIO", LitterColors.BROWN);
+                _SetStateTextView("SUCIO", LitterColors.BROWN);
                 break;
             case InteLitter.STATE_DIRTY:
-                setStateTextView("MUY SUCIO", LitterColors.BLACK);
+                _SetStateTextView("MUY SUCIO", LitterColors.BLACK);
                 break;
             case InteLitter.STATE_CLEANING:
-                setStateTextView("LIMPIANDO", LitterColors.RED);
+                _SetStateTextView("LIMPIANDO", LitterColors.RED);
                 break;
             case InteLitter.STATE_CAT_INSIDE:
-                setStateTextView("GATO DENTRO", LitterColors.YELLOW);
+                _SetStateTextView("GATO DENTRO", LitterColors.YELLOW);
                 break;
             default:
                 break;
@@ -244,25 +228,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Buttons Functions
-    private void clean() {
-        sendMessageBluetooth(isStopped ? 'C' : 'S');
-        setIsStopped();
+    private void _Clean() {
+        _SendMessageBluetooth(isStopped_G ? 'C' : 'S');
+        _SetIsStopped();
     }
 
-    private void startSensorActivity() {
+    private void _StartSensorActivity() {
         Intent intent = new Intent(MainActivity.this, SensorActivity.class);
-        intent.putExtra("state", STATE);
+        intent.putExtra("state", state_G);
         startActivity(intent);
     }
 
     // Auxs functions
-    private void setIsStopped() {
-        isStopped = !isStopped;
-        String txt = isStopped ? "LIMPIAR" : "DETENER";
+    private void _SetIsStopped() {
+        isStopped_G = !isStopped_G;
+        String txt = isStopped_G ? "LIMPIAR" : "DETENER";
         int color = Color.parseColor(
-                isStopped ? LitterColors.GREEN : LitterColors.BLUE
-        );
-        cleanButton.setText(txt);
-        cleanButton.setBackgroundColor(color);
+                isStopped_G ? LitterColors.GREEN : LitterColors.BLUE);
+        cleanButton_G.setText(txt);
+        cleanButton_G.setBackgroundColor(color);
     }
 }

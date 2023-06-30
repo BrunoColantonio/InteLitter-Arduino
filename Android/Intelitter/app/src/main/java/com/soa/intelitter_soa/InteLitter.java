@@ -1,6 +1,7 @@
 package com.soa.intelitter_soa;
 
-public class InteLitter {
+public class InteLitter 
+{
     // States values
     private final static int MIN_STATE_VALUE = 2000;
     private final static int MAX_STATE_VALUE = 2005;
@@ -13,7 +14,8 @@ public class InteLitter {
 
 
 
-    public static boolean isStateValue(int value) {
+    public static boolean isStateValue(int value) 
+    {
         return value >= MIN_STATE_VALUE && value <= MAX_STATE_VALUE;
     }
 }

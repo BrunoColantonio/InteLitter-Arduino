@@ -1,6 +1,7 @@
 package com.soa.intelitter_soa;
 
-public class LitterColors {
+public class LitterColors 
+{
     public static final String RED = "#FC8181";
     public static final String BLUE = "#63B3ED";
     public static final String GREEN = "#48BB78";
