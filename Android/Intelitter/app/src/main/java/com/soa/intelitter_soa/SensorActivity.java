@@ -22,12 +22,9 @@ public class SensorActivity
     private static final int Y_POSITION = 1;
     private static final int Z_POSITION = 2;
 
-    private SensorManager sensorManager;
-    private Sensor sensor;
-    private long lastUpdate, actualTime;
-
+    private SensorManager sensorManager_G;
+    private Sensor sensor_G;
     private int STATE;
-
     private MediaPlayer mediaPlayer;
 
     @Override
@@ -39,41 +36,28 @@ public class SensorActivity
         Intent intent = getIntent();
         STATE = intent.getIntExtra("state", InteLitter.STATE_CLEAN);
 
-        lastUpdate = System.currentTimeMillis();
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        mediaPlayer = MediaPlayer.create(this, getMediaPlayerContent());
+        sensorManager_G = (SensorManager) getSystemService(SENSOR_SERVICE);
+        sensor_G = sensorManager_G.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mediaPlayer = MediaPlayer.create(this, _GetMediaPlayerContent());
 
         mediaPlayer.setOnCompletionListener(
-                new MediaPlayer.OnCompletionListener() 
-                {
-                    @Override
-                    public void onCompletion(MediaPlayer mediaPlayer) 
-                    {
-                        mediaPlayer.stop();
-                        mediaPlayer.release();
-                    }
+                mediaPlayer -> {
+                    mediaPlayer.stop();
+                    mediaPlayer.release();
                 }
         );
 
-        if (sensor == null) 
+        if (sensor_G == null) 
         {
-            Toast
-                    .makeText(
-                            this,
-                            "No hay aceleremotro en tu dispositivo movil. :(",
-                            Toast.LENGTH_SHORT
-                    )
-                    .show();
+            Toast.makeText(this,"No hay aceleremotro en tu dispositivo movil. :(", Toast.LENGTH_SHORT).show();
             finish();
         } 
         else 
         {
-            sensorManager.registerListener(
+            sensorManager_G.registerListener(
                     this,
-                    sensor,
-                    SensorManager.SENSOR_DELAY_NORMAL
-            );
+                    sensor_G,
+                    SensorManager.SENSOR_DELAY_NORMAL);
         }
     }
 
@@ -81,7 +65,7 @@ public class SensorActivity
     protected void onStop() 
     {
         super.onStop();
-        sensorManager.unregisterListener(this);
+        sensorManager_G.unregisterListener(this);
         if (mediaPlayer != null) 
         {
             mediaPlayer.release();
@@ -93,9 +77,9 @@ public class SensorActivity
     {
         super.onResume();
         // Solicitamos acceso a los sensores a utilizar
-        sensorManager.registerListener(
+        sensorManager_G.registerListener(
                 this,
-                sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                sensorManager_G.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
                 SensorManager.SENSOR_DELAY_NORMAL
         );
     }
@@ -103,7 +87,7 @@ public class SensorActivity
     @Override
     protected void onPause() 
     {
-        sensorManager.unregisterListener(this);
+        sensorManager_G.unregisterListener(this);
         if (mediaPlayer != null) 
         {
             mediaPlayer.release();
@@ -114,27 +98,25 @@ public class SensorActivity
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) 
     {
-        if (sensorEvent.sensor.getType() != Sensor.TYPE_ACCELEROMETER) return;
-        if (isShaking(sensorEvent)) 
+        if (sensorEvent.sensor.getType() != Sensor.TYPE_ACCELEROMETER)
+            return;
+        if (_IsShaking(sensorEvent)) 
         {
-            Log.i("MediaPlayer", "mediaPlayer.start()");
             mediaPlayer.start();
         }
     }
 
     @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {}
+    public void onAccuracyChanged(Sensor sensor_G, int i) { }
 
-    private boolean isShaking(SensorEvent sensorEvent) 
+    private boolean _IsShaking(SensorEvent sensorEvent) 
     {
-        return (
-                Math.abs(sensorEvent.values[X_POSITION]) > ACCELEROMETER_MAX_VALUE ||
-                        Math.abs(sensorEvent.values[Y_POSITION]) > ACCELEROMETER_MAX_VALUE ||
-                        Math.abs(sensorEvent.values[Z_POSITION]) > ACCELEROMETER_MAX_VALUE
-        );
+        return (Math.abs(sensorEvent.values[X_POSITION]) > ACCELEROMETER_MAX_VALUE ||
+                Math.abs(sensorEvent.values[Y_POSITION]) > ACCELEROMETER_MAX_VALUE ||
+                Math.abs(sensorEvent.values[Z_POSITION]) > ACCELEROMETER_MAX_VALUE);
     }
 
-    private int getMediaPlayerContent() 
+    private int _GetMediaPlayerContent() 
     {
         switch (STATE) 
         {

@@ -23,7 +23,8 @@ import java.io.OutputStream;
 import java.util.Set;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity 
+{
 
     // Bluetooth Variables
     private BluetoothAdapter bluetoothAdapter_G;
@@ -49,7 +50,8 @@ public class MainActivity extends AppCompatActivity {
     Handler handlerStateTextView_G = new Handler();
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) 
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -59,56 +61,70 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Bluetooth Functions
-    private void _InitBluetooth() {
+    private void _InitBluetooth() 
+    {
 
         bluetoothAdapter_G = BluetoothAdapter.getDefaultAdapter();
 
-        if (bluetoothAdapter_G == null) {
+        if (bluetoothAdapter_G == null) 
+        {
             Toast.makeText(this, "Este dispositivo no tiene Bluetooth :(", Toast.LENGTH_SHORT).show();
             finish();
         }
 
-        if (!bluetoothAdapter_G.isEnabled()) {
+        if (!bluetoothAdapter_G.isEnabled()) 
+        {
             Toast.makeText(this, "El Bluetooth esta desactivado :|", Toast.LENGTH_SHORT).show();
             finish();
         }
 
-        if (bluetoothSocket_G != null) {
+        if (bluetoothSocket_G != null) 
+        {
             _GetBluetoothStreams();
-        } else {
+        } 
+        else 
+        {
             _PairDevicesBluetooth();
         }
     }
 
-    private void _GetBluetoothStreams() {
-        try {
+    private void _GetBluetoothStreams() 
+    {
+        try 
+        {
             outputStream_G = bluetoothSocket_G.getOutputStream();
             inputStream_G = bluetoothSocket_G.getInputStream();
-        } catch (IOException e) {
+        } catch (IOException e) 
+        {
             Toast.makeText(this, "Error al obtener los stream del Bluetooth.", Toast.LENGTH_SHORT).show();
             finish();
         }
     }
 
-    private void _PairDevicesBluetooth() {
+    private void _PairDevicesBluetooth() 
+    {
         _GetBluetoothDevice();
         _CreateBluetoothSocket();
         _ConnectBluetoothSocket();
     }
 
-    private void _GetBluetoothDevice() {
+    private void _GetBluetoothDevice() 
+    {
         int btPermission = ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH);
         int btAdminPermission = ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN);
 
         if (btPermission != PackageManager.PERMISSION_GRANTED ||
-                btAdminPermission != PackageManager.PERMISSION_GRANTED) {
+                btAdminPermission != PackageManager.PERMISSION_GRANTED) 
+        {
             return;
         }
 
         Set<BluetoothDevice> pairedDevices = bluetoothAdapter_G.getBondedDevices();
 
-        for (BluetoothDevice device : pairedDevices) {
-            if (device.getName().equals("HC-05")) {
+        for (BluetoothDevice device : pairedDevices) 
+        {
+            if (device.getName().equals("HC-05")) 
+            {
                 bluetoothDevice_G = device;
                 break;
             }
@@ -116,76 +132,99 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @SuppressLint("MissingPermission")
-    private void _CreateBluetoothSocket() {
-        if (bluetoothDevice_G != null) {
+    private void _CreateBluetoothSocket() 
+    {
+        if (bluetoothDevice_G != null) 
+        {
             UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-            try {
+            try 
+            {
                 bluetoothSocket_G = bluetoothDevice_G.createRfcommSocketToServiceRecord(uuid);
-            } catch (IOException e) {
+            } catch (IOException e) 
+            {
                 Toast.makeText(this, "Error al crear el Socket de Bluetooth.", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
     @SuppressLint("MissingPermission")
-    private void _ConnectBluetoothSocket() {
-        if (bluetoothSocket_G != null) {
-            try {
+    private void _ConnectBluetoothSocket() 
+    {
+        if (bluetoothSocket_G != null) 
+        {
+            try 
+            {
                 bluetoothSocket_G.connect();
                 outputStream_G = bluetoothSocket_G.getOutputStream();
                 inputStream_G = bluetoothSocket_G.getInputStream();
-            } catch (IOException e) {
+            } catch (IOException e) 
+            {
                 Toast.makeText(this, "Error al conectar el Socket Bluetooth.", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
-    private boolean _SendMessageBluetooth(char msg) {
-        try {
+    private boolean _SendMessageBluetooth(char msg) 
+    {
+        try 
+        {
             outputStream_G.write((byte) msg);
-        } catch (IOException e) {
+        } 
+        catch (IOException e) 
+        {
             return false;
         }
         return true;
     }
 
-    private void _CreateBluetoothThread() {
+    private void _CreateBluetoothThread() 
+    {
         Thread thread = new Thread(this::_ReadBluetooth);
         thread.start();
     }
 
-    private void _ReadBluetooth() {
+    private void _ReadBluetooth() 
+    {
         byte[] buffer = new byte[1024];
         int bytesRead;
 
-        while (true) {
-            try {
-                if (inputStream_G != null) {
+        while (true) 
+        {
+            try 
+            {
+                if (inputStream_G != null) 
+                {
                     bytesRead = inputStream_G.read(buffer);
-                    if (bytesRead != -1) {
+                    if (bytesRead != -1) 
+                    {
                         String data = new String(buffer, 0, bytesRead);
                         handlerStateTextView_G.post(
                                 () -> _HandleDataFromBluetooth(Integer.parseInt(data)));
                     }
                 }
-            } catch (IOException e) {
+            } 
+            catch (IOException e) 
+            {
                 Log.i("Error", e.getLocalizedMessage());
             }
         }
     }
 
-    private void _HandleDataFromBluetooth(Integer value) {
-        if (InteLitter.isStateValue(value)) {
+    private void _HandleDataFromBluetooth(Integer value) 
+    {
+        if (InteLitter.isStateValue(value)) 
+        {
             state_G = value;
             _HandleStateTextView(value);
         }
     }
 
     // Components Functions
-    private void _InitComponentVariables() {
+    private void _InitComponentVariables() 
+    {
         // Get the references from the UI
         stateTextView_G = findViewById(R.id.inteLitterState);
-        cleanButton_G = findViewById(R.id.cleanButton_G);
+        cleanButton_G = findViewById(R.id.cleanButton);
         sensorActivityButton_G = findViewById(R.id.activityButton);
 
         // Set Listeners to the buttons.
@@ -196,14 +235,17 @@ public class MainActivity extends AppCompatActivity {
         sensorActivityButton_G.setOnClickListener(sensorActivityFunction_G);
     }
 
-    private void _SetStateTextView(String txt, String hexColor) {
+    private void _SetStateTextView(String txt, String hexColor) 
+    {
         stateTextView_G.setText(txt);
         int color = Color.parseColor(hexColor);
         stateTextView_G.setBackgroundColor(color);
     }
 
-    private void _HandleStateTextView(Integer data) {
-        switch (data) {
+    private void _HandleStateTextView(Integer data) 
+    {
+        switch (data) 
+        {
             case InteLitter.STATE_CLEAN:
                 _SetStateTextView("LIMPIO", LitterColors.BLUE);
                 break;
@@ -228,19 +270,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Buttons Functions
-    private void _Clean() {
+    private void _Clean() 
+    {
         _SendMessageBluetooth(isStopped_G ? 'C' : 'S');
         _SetIsStopped();
     }
 
-    private void _StartSensorActivity() {
+    private void _StartSensorActivity() 
+    {
         Intent intent = new Intent(MainActivity.this, SensorActivity.class);
         intent.putExtra("state", state_G);
         startActivity(intent);
     }
 
     // Auxs functions
-    private void _SetIsStopped() {
+    private void _SetIsStopped() 
+    {
         isStopped_G = !isStopped_G;
         String txt = isStopped_G ? "LIMPIAR" : "DETENER";
         int color = Color.parseColor(
