@@ -1,2 +1,20 @@
-Link al proyecto de Tinkercad:
+# InteLitter
+
+At the University, we were assigned a project about Embedded Systems using an Arduino and an Android App.
+
+The main thing about this project was stablish a conection via Bluetooth from the Arduino to the Android App and vice versa. So the app can send commnads to the Arduino, and the Arduino can send commands to the app.
+
+Our project was focused in the creation of a particular cat litter box.
+
+We use distance and humidity sensors to detect the presence of the cat in the litter box and also to determinated when the cat urinates there.
+
+## Where is implemented?
+📁 Android
+> Here is all the code for the Android App.
+📁 Arduino
+> Here is all the code for the Arduino.
+
+----
+Tinkercad Project:
 https://www.tinkercad.com/things/cB8FBO2UJvU-tp1-soa/editel
+----
