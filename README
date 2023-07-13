@@ -11,10 +11,9 @@ We use distance and humidity sensors to detect the presence of the cat in the li
 ## Where is implemented?
 📁 Android
 > Here is all the code for the Android App.
+
 📁 Arduino
 > Here is all the code for the Arduino.
 
-----
 Tinkercad Project:
 https://www.tinkercad.com/things/cB8FBO2UJvU-tp1-soa/editel
-----

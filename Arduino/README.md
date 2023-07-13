@@ -17,7 +17,9 @@ This Arduino have differents Sensors and Actuators, working together to identify
 ## Where is implemented?
 📁 HardwareUnitTest
 > In this folder you will find a code used to test the Bluetooth in the Arduino.
+
 📁 Tests
 > In this folder you will find all the code that we were developed until we got the final version of the Arduino.
+
 📄 app.ino
 > This is the code that the Arduino has.
